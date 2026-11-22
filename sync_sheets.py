@@ -147,6 +147,14 @@ def build(output, reader=read_tab):
     output.mkdir(parents=True,exist_ok=True)
     for filename in ASSETS:
         shutil.copyfile(ROOT/filename,output/filename)
+    # Content versions prevent browsers and Pages caches mixing old UI assets
+    # with a newly published page. Local development keeps the original URLs.
+    page = (output/'index.html').read_text(encoding='utf-8')
+    for filename in ASSETS:
+        if filename.endswith(('.css', '.js', '.svg')):
+            digest = hashlib.sha256((output/filename).read_bytes()).hexdigest()[:12]
+            page = page.replace('"'+filename+'"', '"'+filename+'?v='+digest+'"')
+    (output/'index.html').write_text(page,encoding='utf-8')
     (output/'.nojekyll').write_text('',encoding='utf-8')
     (output/'market-data.json.gz').write_bytes(gzip.compress(json.dumps(payload,separators=(',',':'),allow_nan=False).encode(),mtime=0))
     (output/'sync-status.json').write_text(json.dumps(status,indent=2),encoding='utf-8')
