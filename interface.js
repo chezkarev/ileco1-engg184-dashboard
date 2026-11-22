@@ -1,6 +1,8 @@
 /* Navigation, controls and chart inspection. Dataset/model calculations live in app.js. */
 const PLATFORM_VIEWS = {
-  market: { label: 'Market', title: 'Panay', description: 'Panay market overview' },
+  dashboard: { label: 'Dashboard', title: 'Panay at a glance', description: 'Latest market dashboard' },
+  market: { label: 'Market', title: 'Market analysis', description: 'Panay market overview' },
+  calculator: { label: 'Calculator', title: 'Load-shift calculator', description: 'Load-shift calculator' },
   map: { label: 'Network', title: 'Panay bus locations', description: 'Panay bus map' },
   demand: { label: 'Demand', title: 'ILECO I · demand & outlook', description: 'ILECO I demand' },
   sources: { label: 'Methods', title: 'Data sources & methods', description: 'Sources & methods' },
@@ -9,10 +11,12 @@ const PLATFORM_VIEWS = {
 
 function initializeInterface() {
   if (!D) return;
-  palette.splice(0, 6, '#cf7d14', '#444765', '#788ba4', '#5e8584', '#a06f62', '#9693aa');
+  icons.dashboard = '<rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/>';
+  icons.calculator = '<rect x="5" y="2" width="14" height="20" rx="1"/><path d="M8 6h8M8 11h2M14 11h2M8 15h2M14 15h2M8 19h2M14 19h2"/>';
+  palette.splice(0, 6, '#b9650d', '#444765', '#788ba4', '#5e8584', '#a06f62', '#9693aa');
   document.querySelector('.rail-brand').innerHTML = panayLogo + '<span>PANAY</span>';
   for (const group of ['primary', 'secondary']) {
-    const keys = group === 'primary' ? ['market', 'map', 'demand'] : ['sources', 'project'];
+    const keys = group === 'primary' ? ['dashboard', 'market', 'calculator', 'map', 'demand'] : ['sources', 'project'];
     document.querySelector('.rail-nav.' + group).innerHTML = keys.map(key => {
       const item = PLATFORM_VIEWS[key];
       return '<button data-view="' + key + '" aria-label="' + item.description + '" aria-controls="' + key + 'View"><svg viewBox="0 0 24 24" aria-hidden="true">' + icons[key] + '</svg><span>' + item.label + '</span></button>';
@@ -27,7 +31,7 @@ function initializeInterface() {
   const content = main.querySelector('.content');
   main.insertBefore(market, cards);
   market.append(cards, content);
-  for (const [key, markup] of [['map', mapMarkup()], ['demand', demandMarkup()], ['sources', sourcesMarkup()], ['project', projectMarkup()]]) {
+  for (const [key, markup] of [['dashboard', overviewMarkup()], ['calculator', '<div class="calculator-page-intro"><span class="feature-label">Decision tool</span><p>Turn historical price differences into a flexible-load scenario. Choose a bus and dates above, then compare two load windows.</p></div><div id="calculatorWorkspace"></div>'], ['map', mapMarkup()], ['demand', demandMarkup()], ['sources', sourcesMarkup()], ['project', projectMarkup()]]) {
     const page = document.createElement('div');
     page.id = key + 'View';
     page.className = 'page-view';
@@ -46,19 +50,33 @@ function initializeInterface() {
   document.querySelectorAll('[data-mapzoom]').forEach(button => button.onclick = () => drawPanay(button.dataset.mapzoom));
 
   setupCalculator();
+  organizeCalculator();
+  const marketNotes = document.createElement('details');
+  marketNotes.className = 'market-notes';
+  marketNotes.innerHTML = '<summary>Data quality & interpretation</summary>';
+  const notes = document.querySelector('#marketView .right');
+  marketNotes.append(notes);
+  market.append(marketNotes);
+  const marketAction = document.createElement('div');
+  marketAction.className = 'market-action';
+  marketAction.innerHTML = '<div><strong>Put price differences to work</strong><span>Compare the energy cost of moving a flexible load.</span></div><button data-open-calculator>Open load-shift calculator</button>';
+  market.insertBefore(marketAction, marketNotes);
+  document.querySelectorAll('[data-open-calculator]').forEach(button => button.onclick = () => navigateView('calculator'));
   const originalRender = render;
   render = function () {
-    if (activeView !== 'market' && activeView !== 'map') return;
+    if (activeView === 'dashboard') { renderOverview(); return; }
+    if (!['market', 'map', 'calculator'].includes(activeView)) return;
     originalRender();
     renderCalculator();
     if (view.nodes) {
-      enhanceMarketCharts();
+      if (activeView === 'market') enhanceMarketCharts();
       updateFilterState();
     }
     if (activeView === 'map') {
       drawPanay();
       stationPanel(stations[stationChoice].nodes.includes(view.node) ? stationChoice : (stations.sta.nodes.includes(view.node) ? 'sta' : 'ilo'));
     }
+    if (activeView === 'calculator') $('rangeCaption').textContent = $('node').value + ' · ' + $('start').value + ' to ' + $('end').value + ' · historical price scenario';
   };
   for (const id of ['node', 'start', 'end', 'nodeMetric', 'regionalMetric', 'priceUnit', 'compare']) {
     $(id).removeEventListener('change', originalRender);
@@ -80,7 +98,7 @@ function initializeInterface() {
   });
   setupDefinitions();
   const requested = location.hash.slice(1);
-  navigateView(PLATFORM_VIEWS[requested] ? requested : 'market', false);
+  navigateView(PLATFORM_VIEWS[requested] ? requested : 'dashboard', false);
   hostedConnection();
 }
 
@@ -98,15 +116,16 @@ function navigateView(key, resetScroll = true) {
     }
   });
   if (definitionBubble) hideDefinition();
-  const marketControls = key === 'market' || key === 'map';
+  const marketControls = key === 'market' || key === 'map' || key === 'calculator';
   $('marketFilters').hidden = !marketControls;
   $('mobileControls').hidden = !marketControls;
   document.querySelector('h1').textContent = PLATFORM_VIEWS[key].title;
-  $('export').hidden = key === 'sources' || key === 'project';
+  $('export').hidden = !['market', 'map', 'demand'].includes(key);
   $('export').textContent = key === 'demand' ? 'Export annual forecast' : 'Export selected CSV';
-  document.querySelector('.top .badge').textContent = key === 'demand' ? 'Annual study · 2024 cutoff' : key === 'map' ? 'Approximate station areas' : key === 'project' ? 'ENGG 184 · project brief' : 'Observed RTD · PHT';
+  document.querySelector('.top .badge').textContent = key === 'dashboard' ? 'Auto refresh · 5 min' : key === 'calculator' ? 'Energy-only scenario' : key === 'demand' ? 'Annual study · 2024 cutoff' : key === 'map' ? 'Approximate station areas' : key === 'project' ? 'ENGG 184 · project brief' : 'Observed RTD · PHT';
   document.querySelector('.footer').firstElementChild.textContent = key === 'demand' ? 'Source: ENGG 184 notebook · saved annual demand, forecasts and backtests' : 'Source: IEMOP RTD via Google Sheets · methods and station caveats in Sources & methods';
   if (marketControls) render();
+  if (key === 'dashboard') renderOverview();
   if (key === 'demand') {
     renderDemand();
     $('rangeCaption').textContent = 'Annual coincident peak · history 2000–2024 · projections 2025–2034';
@@ -118,6 +137,7 @@ function navigateView(key, resetScroll = true) {
 }
 
 function updateFilterState() {
+  $('variableSummary').textContent = labels[$('nodeMetric').value] + ' + ' + labels[$('regionalMetric').value].toLowerCase() + ' · ' + unit($('nodeMetric').value);
   document.querySelectorAll('[data-resolution]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.resolution === resolution)));
   const latest = datePHT(D.regional.at(-1)[0] - 1);
   const first = datePHT(D.regional[0][0] - 1);
@@ -236,14 +256,14 @@ function enhanceMarketCharts() {
     count: 24,
     index: px => px < 51 || px > width - 14 ? -1 : Math.round((px - 51) / (width - 65) * 23),
     x: index => 51 + index / 23 * (width - 65),
-    content: index => '<strong>' + String(index).padStart(2, '0') + ':00–' + String((index + 1) % 24).padStart(2, '0') + ':00 PHT</strong>' + chartRows([{ color: '#cf7d14', label: 'Mean nodal price', value: num(mean(hourly[index])) + ' ' + unit('LMP') }]) + '<div class="inspector-note">' + hourly[index].filter(Number.isFinite).length + ' available five-minute prices</div>'
+    content: index => '<strong>' + String(index).padStart(2, '0') + ':00–' + String((index + 1) % 24).padStart(2, '0') + ':00 PHT</strong>' + chartRows([{ color: '#b9650d', label: 'Mean nodal price', value: num(mean(hourly[index])) + ' ' + unit('LMP') }]) + '<div class="inspector-note">' + hourly[index].filter(Number.isFinite).length + ' available five-minute prices</div>'
   });
   const nodeNames = Object.keys(D.nodes);
   const comparisons = nodeNames.map(node => D.nodes[node].filter(row => row[0] > view.a && row[0] <= view.b).map(row => val(row, 'LMP', 'node')));
   installChartInspector($('comparison'), {
     count: nodeNames.length,
     index: (_px, py) => py < 0 || py > 200 ? -1 : Math.max(0, Math.min(nodeNames.length - 1, Math.round((py - 15) / 31))),
-    content: index => '<strong>' + nodeNames[index] + '</strong>' + chartRows([{ color: '#cf7d14', label: 'Mean nodal price', value: num(mean(comparisons[index])) + ' ' + unit('LMP') }]) + '<div class="inspector-note">' + comparisons[index].filter(Number.isFinite).length.toLocaleString() + ' prices · selected window</div>'
+    content: index => '<strong>' + nodeNames[index] + '</strong>' + chartRows([{ color: '#b9650d', label: 'Mean nodal price', value: num(mean(comparisons[index])) + ' ' + unit('LMP') }]) + '<div class="inspector-note">' + comparisons[index].filter(Number.isFinite).length.toLocaleString() + ' prices · selected window</div>'
   });
 }
 
@@ -269,7 +289,7 @@ function drawAnalyticalSeries(id, series, options = {}) {
     const yy = T + i * ph / 4;
     c.strokeStyle = '#e8ecf2'; c.lineWidth = 1;
     c.beginPath(); c.moveTo(L, yy); c.lineTo(w - R, yy); c.stroke();
-    c.textAlign = 'right'; c.fillStyle = '#758195';
+    c.textAlign = 'right'; c.fillStyle = '#43516a';
     c.fillText(num(hi - (hi - lo) * i / 4, options.decimals ?? 0), L - 9, yy + 4);
   }
   const ticks = options.ticks || Array.from({ length: 5 }, (_, i) => Math.round(xmin + (xmax - xmin) * i / 4));
@@ -277,7 +297,7 @@ function drawAnalyticalSeries(id, series, options = {}) {
   ticks.forEach((tick, i) => {
     if (i % stride && i !== ticks.length - 1) return;
     c.textAlign = i === 0 ? 'left' : i === ticks.length - 1 ? 'right' : 'center';
-    c.fillStyle = '#758195';
+    c.fillStyle = '#43516a';
     c.fillText(options.formatX ? options.formatX(tick) : String(tick), x(tick), h - 10);
   });
   if (options.boundary != null) {
@@ -290,16 +310,17 @@ function drawAnalyticalSeries(id, series, options = {}) {
     let previous = false;
     for (const point of item.data) {
       if (point.y == null) { previous = false; continue; }
+      if (options.maxGap && previous && point.x - previous > options.maxGap) previous = false;
       if (previous) c.lineTo(x(point.x), y(point.y)); else c.moveTo(x(point.x), y(point.y));
-      previous = true;
+      previous = point.x;
     }
     c.stroke(); c.setLineDash([]);
-    for (const point of item.data) {
+    for (const point of options.markers === false ? [] : item.data) {
       if (point.y == null) continue;
       c.beginPath(); c.arc(x(point.x), y(point.y), 2.5, 0, Math.PI * 2); c.fillStyle = item.color; c.fill();
     }
   }
-  c.fillStyle = '#758195'; c.textAlign = 'left'; c.fillText(options.unit || 'MW', L, 14);
+  c.fillStyle = '#43516a'; c.textAlign = 'left'; c.fillText(options.unit || 'MW', L, 14);
   const xs = [...new Set(all.map(point => point.x))].sort((a, b) => a - b).map(value => ({ x: value }));
   installChartInspector(el, {
     count: xs.length,
@@ -308,7 +329,7 @@ function drawAnalyticalSeries(id, series, options = {}) {
     content: index => {
       const value = xs[index].x;
       const items = series.map(item => ({ item, point: item.data.find(point => point.x === value) })).filter(pair => pair.point);
-      return '<strong>' + escapeChartText(options.formatX ? options.formatX(value) : value) + '</strong>' + chartRows(items.map(pair => ({ color: pair.item.color, label: pair.item.name, value: num(pair.point.y) + ' ' + (options.unit || 'MW') })));
+      return '<strong>' + escapeChartText(options.formatTooltip ? options.formatTooltip(value) : options.formatX ? options.formatX(value) : value) + '</strong>' + chartRows(items.map(pair => ({ color: pair.item.color, label: pair.item.name, value: num(pair.point.y) + ' ' + (options.unit || 'MW') })));
     }
   });
 }
@@ -319,7 +340,7 @@ function enhanceValidationBars() {
     index: (_px, py) => py < 12 || py > 245 ? -1 : Math.max(0, Math.min(rollingMetrics.length - 1, Math.floor((py - 21) / 43))),
     content: index => {
       const metric = rollingMetrics[index];
-      return '<strong>' + escapeChartText(metric.Model) + '</strong>' + chartRows([{ color: '#cf7d14', label: 'Rolling MAE', value: num(metric.MAE, 3) + ' MW' }]) + '<div class="inspector-note">2015–2024 · one-year-ahead · n = 10</div>';
+      return '<strong>' + escapeChartText(metric.Model) + '</strong>' + chartRows([{ color: '#b9650d', label: 'Rolling MAE', value: num(metric.MAE, 3) + ' MW' }]) + '<div class="inspector-note">2015–2024 · one-year-ahead · n = 10</div>';
     }
   });
 }

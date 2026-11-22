@@ -29,11 +29,14 @@ The Panay silhouette uses Natural Earth public-domain geometry. Other provenance
 
 ## Interface and code
 
-The application uses one navigation rail: **Market**, **Network**, and **Demand**, with **Methods** and **About** below. Market filters sit above the charts; on phones, **Filters & dates** opens the same controls. All quantities retain their original units, signed values, interval boundaries and missing observations.
+The application opens on **Dashboard**: a fixed latest-snapshot view with four indicators, 24-hour prices, Visayas generation/market requirement, and six bus prices. It has no variable or axis controls. The existing five-minute deployment check refreshes this view when a new snapshot arrives. Observation time and sync time are shown separately; older observations are labelled historical snapshots.
+
+**Market** retains all adjustable analysis. Primary date, node and resolution filters sit above the charts; **Chart variables & comparison** opens the complete variable/unit/comparison controls. **Calculator** is a dedicated load-shift workspace using the same bus/date selection and the original scenario calculations. **Network**, **Demand**, **Methods**, and **About** remain available. On phones, **Filters & dates** opens the same controls. All quantities retain their original units, signed values, interval boundaries and missing observations.
 
 - `index.html`: page structure and saved notebook results.
 - `styles.css`: layout, typography, colors and responsive breakpoints.
 - `interface.js`: navigation, filter presentation and pointer/keyboard chart inspection.
+- `overview.js`: the fixed latest-snapshot dashboard and calculator page layout. The dashboard uses a common observed timestamp across all six buses and the regional series, with prices displayed in PHP/kWh independently of Market settings.
 - `app.js`: existing market calculations, maps, notebook views, definitions, calculator and CSV exports.
 - `hosted-source.js`: deployed snapshot loading, refresh and cached fallback.
 - `sync_sheets.py`: public Sheets validation and static build, including all interface assets.
