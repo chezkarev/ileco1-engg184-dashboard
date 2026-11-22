@@ -80,8 +80,9 @@ function updateComparisonIndicators(snapshot) {
   const prices=snapshot.nodePrices.map(n=>field(D.nodes[n.name].find(r=>r[0]===time),'LMP',D.nodeFields));
   const reference=field(D.nodes[snapshot.reference].find(r=>r[0]===time),'LMP',D.nodeFields);
   const spread=prices.every(Number.isFinite)?Math.max(...prices)-Math.min(...prices):null;
-  [[snapshot.price,reference],[snapshot.generation,field(region,'GENERATION',D.regionalFields)],[snapshot.requirement,field(region,'MKT_REQT',D.regionalFields)],[snapshot.spread,spread]].forEach((pair,i)=>setIndicator(document.querySelectorAll('.overview-stat')[i],...pair,'vs. same interval yesterday'));
-  document.querySelectorAll('.latest-bus-row').forEach((row,i)=>setIndicator(row,snapshot.nodePrices[i].value,prices[i],'vs. yesterday'));
+  const kwh=value=>Number.isFinite(value)?value/1000:null;
+  [[kwh(snapshot.price),kwh(reference)],[snapshot.generation,field(region,'GENERATION',D.regionalFields)],[snapshot.requirement,field(region,'MKT_REQT',D.regionalFields)],[kwh(snapshot.spread),kwh(spread)]].forEach((pair,i)=>setIndicator(document.querySelectorAll('.overview-stat')[i],...pair,'vs. same interval yesterday'));
+  document.querySelectorAll('.latest-bus-row').forEach((row,i)=>setIndicator(row,kwh(snapshot.nodePrices[i].value),kwh(prices[i]),'vs. yesterday'));
   const definitions={nowPrice:'Wholesale locational marginal price at 08STBAR_SS1, in PHP/kWh. This is not a retail tariff.',nowGeneration:'Total generation in the Visayas regional market records, in MW. It is not Panay-only generation.',nowRequirement:'Visayas market requirement, in MW. This is distinct from ILECO I demand.',nowSpread:'Highest minus lowest price across the six candidate Panay buses at the same observed interval.'};
   for(const [id,definition] of Object.entries(definitions)){const label=$(id).nextElementSibling;markDefinition(label,label.textContent,definition);}
 }
