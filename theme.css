@@ -1,0 +1,129 @@
+/* Shared color system. Layout remains in styles.css; neither theme changes data. */
+:root, html[data-theme=dark] {
+  color-scheme: dark;
+  --bg: #101a30; --surface: #19263e; --surface-alt: #22324c;
+  --ink: #eff4fc; --muted: #c2cfe2; --line: #53637d;
+  --navy: #101a30; --orange: #ffc074; --blue: #ffc074; --teal: #90c3ed;
+  --rail-bg: #0d1528; --rail-ink: #eef3fc; --rail-active: #293c5a;
+  --metric: #ffe39a; --accent-bg: #b95e21; --accent-ink: #fff8ef;
+  --soft-accent: #392f26; --notice-ink: #f8d09c; --map-water: #172a3e;
+  --map-land: #355950; --map-border: #87b7b0; --map-text: #e5f4f1;
+  --link: #a9d1ff; --danger: #ffb3a2; --map-pin: #ffc074;
+  --definition-bg: #263b58; --definition-ink: #f3f7ff;
+}
+html[data-theme=light] {
+  color-scheme: light;
+  --bg: #f3f6fa; --surface: #ffffff; --surface-alt: #edf2f7;
+  --ink: #172d46; --muted: #344b65; --line: #a6b7c9;
+  --navy: #172a46; --orange: #a95510; --blue: #a95510; --teal: #16476b;
+  --rail-bg: #172a46; --rail-ink: #f0f4fc; --rail-active: #304968;
+  --metric: #163b5e; --accent-bg: #b95e21; --accent-ink: #ffffff;
+  --soft-accent: #fff2df; --notice-ink: #75420d; --map-water: #eef5fa;
+  --map-land: #cfdfd9; --map-border: #6d9694; --map-text: #234c59;
+  --link: #1e517e; --danger: #a23525; --map-pin: #d57423;
+  --definition-bg: #172a46; --definition-ink: #f2f6ff;
+}
+html[data-theme] body, html[data-theme] .app[data-active-view] { background: var(--bg); color: var(--ink); }
+html[data-theme] .app[data-active-view] .main { background: var(--bg); }
+html[data-theme] .app[data-active-view] :is(h1,h2,h3,.eyebrow,.card .label,.filter-caption,.filter-field>label,.date-field label,.fact b,.source-list strong,.project-objectives strong,.station-head .kicker) { color: var(--ink); }
+html[data-theme] .app[data-active-view] :is(.subtitle,.panel-sub,.legend,.demand-legend,.mini-note,.chart-foot,.card .foot,.card .value small,.toggle,.filter-context,.right p,.qualityhero small,.fact span,.footer,.view-intro,.map-caption,.map-attribution,.station-head p,.map-detail small,.map-detail p,.insight,.history-sidebar,.source-list,.calculator-intro,.calculator-line label,.calculator-number,.calculator-times label,.calculator-window-note,.calculator-prices span,.calculator-result>span,.calculator-result small,.calculator-costs,.calculator-evidence,.calculator-method,.demand-toolbar label,.project-heading p,.project-purpose>p,.project-objectives span,.project-scope p,.project-kicker) { color: var(--muted); }
+html[data-theme] .app[data-active-view] :is(.panel,.sidebar,.cards,.connection,.market-notes,.study-context,.demand-toolbar,.market-action,.source-detail-grid,.project-purpose,.project-scope,.dash-panel) { background: var(--surface); border-color: var(--line); color: var(--ink); }
+html[data-theme] .app[data-active-view] :is(.card,.fact,.station-head,.map-detail,.source-detail-grid,.calculator-outcome,.calculator-evidence,.project-objectives li,.footer) { border-color: var(--line); }
+html[data-theme] .app[data-active-view] :is(.filters-secondary,.filter-context,.qualityhero,.calculator-result,th,.badge,.segmented button.active,.preset button[aria-pressed=true],.bus-row.selected,.map-heading .subtabs button.active) { background: var(--surface-alt); color: var(--ink); border-color: var(--line); }
+html[data-theme] .app[data-active-view] :is(.filters-secondary,.filter-context,.chart-options,.market-notes,.study-context) { border-color: var(--line); }
+html[data-theme] .app[data-active-view] :is(button,input,select) { background-color: var(--surface); border-color: var(--line); color: var(--ink); }
+html[data-theme] .app[data-active-view] button:hover { background-color: var(--surface-alt); border-color: var(--orange); }
+html[data-theme] .app[data-active-view] :is(input,select) { color-scheme: inherit; }
+html[data-theme] .app[data-active-view] input[type=checkbox], html[data-theme] .app[data-active-view] input[type=range] { accent-color: var(--orange); }
+html[data-theme] .app[data-active-view] :is(a,.source-details>summary,.chart-options>summary,.market-notes>summary,.study-context>summary) { color: var(--link); }
+html[data-theme] .app[data-active-view] :is(.connection .data-vintage strong,.connection .status,.source-detail-grid>div>strong) { color: var(--ink); }
+html[data-theme] .app[data-active-view] :is(.connection .data-vintage>span,.connection .source-details p,.connection #message,.chart-options>summary span) { color: var(--muted); }
+html[data-theme] .app[data-active-view] :is(.card .value,.qualityhero strong,.map-detail strong,.calculator-prices strong,.calculator-result>strong,.calculator-costs b) { color: var(--metric); }
+html[data-theme] .app[data-active-view] :is(.notice,.notebook-note) { background: var(--soft-accent); color: var(--notice-ink); border-color: var(--orange); }
+html[data-theme] .app[data-active-view] .calculator-result.increase>strong { color: var(--danger); }
+html[data-theme] .app[data-active-view] :is(.export,.market-action button,.project-actions button:first-child) { background: var(--accent-bg); color: var(--accent-ink); border-color: var(--accent-bg); }
+html[data-theme] .app[data-active-view] :is(td,th) { border-color: var(--line); }
+html[data-theme] .app[data-active-view] tbody tr:nth-child(even) td { background: var(--surface-alt); }
+html[data-theme] .app[data-active-view] .subtabs button { background: transparent; color: var(--muted); }
+html[data-theme] .app[data-active-view] .subtabs button.active { color: var(--ink); border-bottom-color: var(--orange); background: var(--surface-alt); }
+html[data-theme] .app[data-active-view] .rail { background: var(--rail-bg); border-color: var(--line); }
+html[data-theme] .app[data-active-view] .rail-brand { color: var(--rail-ink); }
+html[data-theme] .app[data-active-view] .rail-nav { gap: 3px; }
+html[data-theme] .app[data-active-view] .rail-nav button { background: transparent; border-color: transparent; color: var(--rail-ink); padding: 8px 3px; gap: 3px; font-size: 14px; }
+html[data-theme] .app[data-active-view] .rail-nav button svg { width: 18px; height: 18px; }
+html[data-theme] .app[data-active-view] .rail-nav button:hover { background: var(--rail-active); }
+html[data-theme] .app[data-active-view] .rail-nav button.active { background: var(--rail-active); border-left-color: #ffc074; }
+html[data-theme] .app[data-active-view] .rail-nav button[data-view=calculator] { color: #ffe0af; border-color: #9b794d; }
+html[data-theme] .app[data-active-view] .project-team { background: var(--rail-bg); color: var(--rail-ink); }
+html[data-theme] .app[data-active-view] :is(.project-team .project-kicker,.team-course) { color: #dfd8c7; }
+html[data-theme] .app[data-active-view] :is(.panay-map,.dash-map-body) { background: var(--map-water); }
+html[data-theme] .app[data-active-view] :is(.map-coast,.dash-coast) { fill: var(--map-land); stroke: var(--map-border); }
+html[data-theme] .app[data-active-view] :is(.maptext,.dash-island-name,.dash-map-north) { fill: var(--map-text); }
+html[data-theme] .app[data-active-view] .marker text { fill: var(--map-text); stroke: var(--map-water); }
+html[data-theme] .app[data-active-view] :is(.marker .pin-core,.dash-station circle) { fill: var(--map-pin); stroke: var(--map-water); }
+html[data-theme] .app[data-active-view] .dash-station text { fill: var(--map-text); stroke: var(--map-water); }
+html[data-theme] .app[data-active-view] .dash-station path { stroke: var(--map-text); }
+html[data-theme] .app[data-active-view] .dash-station:focus circle, html[data-theme] .app[data-active-view] .dash-station:hover circle { fill: #fff1a8; stroke: var(--map-border); }
+html[data-theme] .app[data-active-view] :is(.tooltip,.chart-inspector,.map-bus-tip) { background: var(--definition-bg); color: var(--definition-ink); border-color: var(--line); }
+html[data-theme] .app[data-active-view] .chart-inspector strong { color: #ffce92; }
+html[data-theme] .app[data-active-view] .inspector-note { color: #d9e5f4; }
+html[data-theme] .concept-definition { background: var(--definition-bg); color: var(--definition-ink); border-color: var(--line); }
+html[data-theme] .concept-definition strong { color: #ffce92; }
+html[data-theme] .definition-close { color: #f3f7ff; }
+html[data-theme] #loading { background: var(--bg); color: var(--ink); }
+html[data-theme] #loading p { color: var(--muted); }
+html[data-theme] .app[data-active-view] .theme-control { display: flex; gap: 0; flex-shrink: 0; padding-top: 10px; margin-top: 10px; border-top: 1px solid #53637d; }
+html[data-theme] .app[data-active-view] .theme-control button { flex: 1; background: transparent; color: var(--rail-ink); border-color: #66748c; border-radius: 0; padding: 5px 2px; font-size: 13px; line-height: 1.3; }
+html[data-theme] .app[data-active-view] .theme-control button:first-child { border-radius: 3px 0 0 3px; }
+html[data-theme] .app[data-active-view] .theme-control button:last-child { border-radius: 0 3px 3px 0; border-left: 0; }
+html[data-theme] .app[data-active-view] .theme-control button[aria-pressed=true] { background: #f6c778; color: #172a46; font-weight: 700; border-color: #f6c778; }
+/* Same panel and KPI colors on Dashboard as the analytical pages. */
+html[data-theme] .app[data-active-view=dashboard] .top { border-color: var(--line); }
+html[data-theme] .app[data-active-view=dashboard] .connection { background: transparent; }
+html[data-theme] .app[data-active-view=dashboard] #refresh { background: var(--surface); color: var(--ink); border-color: var(--line); }
+html[data-theme] .app[data-active-view=dashboard] #dashboardView { grid-template-rows: 100px minmax(0,1fr) 20px; }
+html[data-theme] .app[data-active-view=dashboard] .overview-summary { border: 0; gap: 10px; }
+html[data-theme] .app[data-active-view=dashboard] .overview-stat { background: var(--surface); border: 1px solid var(--line); border-left: 3px solid var(--orange); padding: 8px 12px; border-radius: 3px; }
+html[data-theme] .app[data-active-view=dashboard] .overview-stat>strong { color: var(--metric); font-size: clamp(29px,3.2vw,43px); }
+html[data-theme] .app[data-active-view=dashboard] .overview-stat>span { color: var(--ink); font-size: 14px; }
+html[data-theme] .app[data-active-view=dashboard] .overview-stat small { color: var(--muted); font-size: 12px; }
+html[data-theme] .app[data-active-view=dashboard] .dash-panel-title { background: var(--accent-bg); color: var(--accent-ink); }
+html[data-theme] .app[data-active-view=dashboard] .dash-panel-title h2, html[data-theme] .app[data-active-view=dashboard] .dash-panel-title>span { color: var(--accent-ink); }
+html[data-theme] .app[data-active-view=dashboard] .dash-text-button { background: transparent; color: var(--accent-ink); border-color: #ffcfaa; }
+html[data-theme] .app[data-active-view=dashboard] :is(.dash-supplier-body>strong,.latest-bus-row>span,#overviewMapReadout strong) { color: var(--ink); }
+html[data-theme] .app[data-active-view=dashboard] :is(.dash-supplier-body p,.dash-supplier-body a,.dash-capacity>span,#overviewCompleteness,.dash-legend,.dash-footnote,#overviewMapReadout span) { color: var(--muted); }
+html[data-theme] .app[data-active-view=dashboard] :is(.dash-capacity b,.latest-bus-row>strong) { color: var(--metric); }
+html[data-theme] .app[data-active-view=dashboard] #overviewMapReadout { background: var(--surface); border-color: var(--line); }
+html[data-theme] .app[data-active-view=dashboard] .bus-price-track { background: var(--surface-alt); }
+html[data-theme] .app[data-active-view=dashboard] .bus-price-track>span { background: var(--teal); }
+html[data-theme] .app[data-active-view=dashboard] .dash-legend i { border-color: var(--teal); }
+html[data-theme] .app[data-active-view=dashboard] .dash-legend span:last-child i { border-color: var(--orange); }
+@media(max-height:700px) and (min-width:761px) {
+ html[data-theme] .app[data-active-view=dashboard] #dashboardView { grid-template-rows: 90px minmax(0,1fr) 17px; }
+ html[data-theme] .app[data-active-view=dashboard] .overview-stat { padding: 6px 10px; }
+ html[data-theme] .app[data-active-view=dashboard] .overview-stat>strong { font-size: 32px; }
+}
+@media(max-width:760px) {
+ html[data-theme] .app[data-active-view] .rail { grid-template-columns: auto minmax(0,1fr) auto; }
+ html[data-theme] .app[data-active-view] .rail-brand { grid-row: 1; grid-column: 1; }
+ html[data-theme] .app[data-active-view] .theme-control { grid-row: 1; grid-column: 2; align-self: start; justify-self: center; margin: 0; padding: 0; border: 0; width: 94px; }
+ html[data-theme] .app[data-active-view] .theme-control button { font-size: 12px; padding: 6px 3px; }
+ html[data-theme] .app[data-active-view] .rail-nav.secondary { grid-row: 1; grid-column: 3; }
+ html[data-theme] .app[data-active-view] .rail-nav.secondary button { font-size: 12px; padding: 6px; }
+ html[data-theme] .app[data-active-view] .rail-nav.primary { grid-column: 1/-1; }
+ html[data-theme] .app[data-active-view] .rail-nav.primary button { font-size: 13px; }
+ html[data-theme] .app[data-active-view=dashboard] .rail-nav.primary button { font-size: 11px; padding: 5px 1px; }
+ html[data-theme] .app[data-active-view=dashboard] #dashboardView { grid-template-rows: 120px minmax(0,1fr) 26px; }
+ html[data-theme] .app[data-active-view=dashboard] .overview-summary { gap: 6px; }
+ html[data-theme] .app[data-active-view=dashboard] .overview-stat { padding: 4px 7px; }
+ html[data-theme] .app[data-active-view=dashboard] .overview-stat>strong { font-size: 25px; }
+ html[data-theme] .app[data-active-view=dashboard] .overview-stat>span { font-size: 11px; }
+ html[data-theme] .app[data-active-view=dashboard] .overview-stat small { font-size: 10px; }
+}/* All KPI groups use the same individually bordered data boxes. */
+html[data-theme] .app[data-active-view] .cards { border: 0; background: transparent; gap: 10px; }
+html[data-theme] .app[data-active-view] .cards .card { background: var(--surface); border: 1px solid var(--line); border-left: 3px solid var(--orange); border-radius: 3px; }
+html[data-theme] .app[data-active-view] .dash-panel .dash-panel-title h2,
+html[data-theme] .app[data-active-view] .dash-panel .dash-panel-title>span { color: var(--accent-ink); }@media(max-width:760px) {
+ html[data-theme] .app[data-active-view=dashboard] .dash-supplier-body { gap: 1px; padding: 4px 5px; }
+ html[data-theme] .app[data-active-view=dashboard] .dash-capacity { gap: 0 6px; }
+}

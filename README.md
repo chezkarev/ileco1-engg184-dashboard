@@ -29,12 +29,15 @@ The Panay silhouette uses Natural Earth public-domain geometry. Other provenance
 
 ## Interface and code
 
+All tabs share **Light** and **Dark** color themes, selected using the sidebar control. The choice is saved in this browser and applies to charts, maps, tables, filters, definitions and KPI boxes. Dark is the initial default. The Dashboard keeps its manual refresh and single-screen layout in either theme; changing colors does not change the selected data or calculations.
+
 The application opens on **Dashboard**: a dark, single-screen snapshot with four indicators, 24-hour prices, Visayas generation/market requirement, six bus prices, and an interactive Panay station-area map. This tab refreshes only through **Refresh data**; the other views retain their five-minute deployment checks. Observation time and sync time are shown separately; older observations are labelled historical snapshots. Its supplier panel cites PEDC's official 164 MW + 150 MW plant profile as regional generation context, not an attributed supplier contract for each bus. The five Sta. Barbara codes share one approximate station area; Iloilo 1 is a second station area.
 
 **Market** retains all adjustable analysis. Primary date, node and resolution filters sit above the charts; **Chart variables & comparison** opens the complete variable/unit/comparison controls. **Calculator** is a dedicated load-shift workspace using the same bus/date selection and the original scenario calculations. **Network**, **Demand**, **Methods**, and **About** remain available. On phones, **Filters & dates** opens the same controls. All quantities retain their original units, signed values, interval boundaries and missing observations.
 
 - `index.html`: page structure and saved notebook results.
 - `styles.css`: layout, typography, colors and responsive breakpoints.
+- `theme.css` and `theme.js`: shared semantic colors, persistent light/dark choice and canvas/legend palettes across every tab.
 - `interface.js`: navigation, filter presentation and pointer/keyboard chart inspection.
 - `overview.js`: the fixed latest-snapshot dashboard and calculator page layout. The dashboard uses a common observed timestamp across all six buses and the regional series, with prices displayed in PHP/kWh independently of Market settings.
 - `app.js`: existing market calculations, maps, notebook views, definitions, calculator and CSV exports.
@@ -47,7 +50,7 @@ Serve the checked-in snapshot for interface work with `python -m http.server 877
 
 ## Validation
 
-Run `python -m unittest test_sync.py`, `node tests/test-analytics.cjs`, and `node tests/test-refresh.cjs`. Syntax checks are `node --check app.js`, `node --check interface.js`, `node --check overview.js`, and `node --check hosted-source.js`.
+Run `python -m unittest test_sync.py`, `node tests/test-analytics.cjs`, `node tests/test-refresh.cjs`, and `node tests/test-theme.cjs`. Syntax checks are `node --check app.js`, `node --check interface.js`, `node --check overview.js`, `node --check theme.js`, and `node --check hosted-source.js`.
 
 The analytical regression suite covers Philippine-time interval boundaries, gaps/null values, signed schedules, price units, complete paired load-shift windows, negative prices, notebook outputs and both CSV export types. The interface refactor was also compared against the original code across 258 full-snapshot aggregations; results and the embedded notebook data matched. Browser checks cover navigation, all node/variable selectors, date presets, resolutions, map selection, chart readouts, definitions, calculator controls and exports at desktop, tablet and phone sizes.
 

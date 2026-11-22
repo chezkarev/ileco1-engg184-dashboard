@@ -97,6 +97,7 @@ function initializeInterface() {
     }, 180);
   });
   setupDefinitions();
+  initializeTheme();
   const requested = location.hash.slice(1);
   navigateView(PLATFORM_VIEWS[requested] ? requested : 'dashboard', false);
   hostedConnection();
@@ -244,7 +245,7 @@ function enhanceMarketCharts() {
       const point = points[index];
       const rows = series.map(item => ({ color: item.color, label: item.name, value: num(item.lookup.get(point.t)?.v) + ' ' + unit(view.nm) }));
       const region = regional.get(point.t);
-      if (view.rm !== 'none') rows.push({ color: '#60758e', label: 'Visayas ' + labels[view.rm].toLowerCase(), value: num(region?.v) + ' MW' });
+      if (view.rm !== 'none') rows.push({ color: chartColor('#16476b'), label: 'Visayas ' + labels[view.rm].toLowerCase(), value: num(region?.v) + ' MW' });
       return '<strong>' + stamp(point.t) + ' PHT</strong>' + chartRows(rows) + '<div class="inspector-note">' + point.n + ' node observations · ' + labels[view.nm] + '</div>';
     }
   });
@@ -281,17 +282,17 @@ function drawAnalyticalSeries(id, series, options = {}) {
   const x = value => L + (value - xmin) / (xmax - xmin || 1) * pw;
   const y = value => T + (hi - value) / (hi - lo) * ph;
   if (options.boundary != null) {
-    c.fillStyle = '#faf6ee';
+    c.fillStyle=chartColor('#faf6ee');
     c.fillRect(x(options.boundary), T, w - R - x(options.boundary), ph);
-    c.fillStyle = '#a38a64';
+    c.fillStyle=chartColor('#a38a64');
     c.textAlign = 'left';
     c.fillText('MODEL PROJECTIONS', x(options.boundary) + 9, T + 14);
   }
   for (let i = 0; i <= 4; i++) {
     const yy = T + i * ph / 4;
-    c.strokeStyle = '#e8ecf2'; c.lineWidth = 1;
+    c.strokeStyle=chartColor('#e8ecf2'); c.lineWidth = 1;
     c.beginPath(); c.moveTo(L, yy); c.lineTo(w - R, yy); c.stroke();
-    c.textAlign = 'right'; c.fillStyle = '#43516a';
+    c.textAlign = 'right'; c.fillStyle=chartColor('#43516a');
     c.fillText(num(hi - (hi - lo) * i / 4, options.decimals ?? 0), L - 9, yy + 4);
   }
   const ticks = options.ticks || Array.from({ length: 5 }, (_, i) => Math.round(xmin + (xmax - xmin) * i / 4));
@@ -299,15 +300,15 @@ function drawAnalyticalSeries(id, series, options = {}) {
   ticks.forEach((tick, i) => {
     if (i % stride && i !== ticks.length - 1) return;
     c.textAlign = i === 0 ? 'left' : i === ticks.length - 1 ? 'right' : 'center';
-    c.fillStyle = '#43516a';
+    c.fillStyle=chartColor('#43516a');
     c.fillText(options.formatX ? options.formatX(tick) : String(tick), x(tick), h - 10);
   });
   if (options.boundary != null) {
-    c.strokeStyle = '#c8bca8'; c.setLineDash([3, 4]); c.beginPath();
+    c.strokeStyle=chartColor('#c8bca8'); c.setLineDash([3, 4]); c.beginPath();
     c.moveTo(x(options.boundary), T); c.lineTo(x(options.boundary), h - B); c.stroke(); c.setLineDash([]);
   }
   for (const item of series) {
-    c.strokeStyle = item.color; c.lineWidth = item.name === 'Actual' ? 2.4 : 1.8;
+    c.strokeStyle=chartColor(item.color); c.lineWidth = item.name === 'Actual' ? 2.4 : 1.8;
     c.setLineDash(item.dashed ? [6, 4] : []); c.beginPath();
     let previous = false;
     for (const point of item.data) {
@@ -319,10 +320,10 @@ function drawAnalyticalSeries(id, series, options = {}) {
     c.stroke(); c.setLineDash([]);
     for (const point of options.markers === false ? [] : item.data) {
       if (point.y == null) continue;
-      c.beginPath(); c.arc(x(point.x), y(point.y), 2.5, 0, Math.PI * 2); c.fillStyle = item.color; c.fill();
+      c.beginPath(); c.arc(x(point.x), y(point.y), 2.5, 0, Math.PI * 2); c.fillStyle=chartColor(item.color); c.fill();
     }
   }
-  c.fillStyle = '#43516a'; c.textAlign = 'left'; c.fillText(options.unit || 'MW', L, 14);
+  c.fillStyle=chartColor('#43516a'); c.textAlign = 'left'; c.fillText(options.unit || 'MW', L, 14);
   const xs = [...new Set(all.map(point => point.x))].sort((a, b) => a - b).map(value => ({ x: value }));
   installChartInspector(el, {
     count: xs.length,
