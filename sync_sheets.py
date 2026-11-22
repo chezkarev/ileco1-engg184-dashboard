@@ -21,7 +21,7 @@ ROOT = Path(__file__).resolve().parent
 PHT = timezone(timedelta(hours=8))
 NODE_FIELDS = ['SCHED_MW','LMP','LOSS_FACTOR','LMP_SMP','LMP_LOSS','LMP_CONGESTION']
 REGIONAL_FIELDS = ['MKT_REQT','LOAD_BID','LOAD_CURTAILED','LOSSES','GENERATION','MKT_IMPORT','MKT_EXPORT']
-ASSETS = ['index.html','hosted-source.js','panay-grid-logo.svg','sheet-config.json']
+ASSETS = ['index.html','styles.css','app.js','interface.js','hosted-source.js','panay-grid-logo.svg','sheet-config.json']
 
 def parse_response(text):
     match = re.search(r'google\.visualization\.Query\.setResponse\((.*)\);?\s*$', text, re.S)
