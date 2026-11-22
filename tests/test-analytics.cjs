@@ -33,6 +33,38 @@ const plain = value => JSON.parse(JSON.stringify(value));
 const data = JSON.parse(zlib.gunzipSync(fs.readFileSync(path.join(root, 'market-data.json.gz'))));
 context.testData = data;
 evaluate('D = testData');
+vm.runInContext(fs.readFileSync(path.join(root, 'overview.js'), 'utf8'), context);
+
+// The fixed dashboard is independent of Market units and uses one common timestamp.
+const overviewBefore = plain(evaluate('buildLatestSnapshot(D)'));
+assert.equal(overviewBefore.end, data.regional.at(-1)[0]);
+assert.equal(overviewBefore.prices.length, 288);
+assert.equal(overviewBefore.regional.length, 288);
+assert.equal(overviewBefore.price, data.nodes['08STBAR_SS1'].at(-1)[data.nodeFields.indexOf('LMP') + 1]);
+fields.priceUnit.value = 'mwh';
+assert.deepEqual(plain(evaluate('buildLatestSnapshot(D)')), overviewBefore);
+fields.priceUnit.value = 'kwh';
+const sampleTime = Date.parse('2026-11-20T00:00:00+08:00');
+context.snapshotFixture = {
+  nodeFields: ['LMP'], regionalFields: ['GENERATION', 'MKT_REQT'],
+  nodes: { '08STBAR_SS1': [[sampleTime, 2000], [sampleTime + 300000, -1000], [sampleTime + 600000, 5000]], '08ILO_SS1': [[sampleTime, 4000], [sampleTime + 300000, null]] },
+  regional: [[sampleTime, 300, 400], [sampleTime + 300000, 400, 500], [sampleTime + 600000, 600, 700]]
+};
+let snapshot = plain(evaluate('buildLatestSnapshot(snapshotFixture)'));
+assert.equal(snapshot.end, sampleTime + 300000); // Later regional data cannot mix with older bus data.
+assert.equal(snapshot.price, -1000);
+assert.equal(snapshot.prices.at(-1).y, -1);
+assert.equal(snapshot.spread, null); // One valid price cannot establish a spread.
+assert.equal(snapshot.nodePrices[1].value, null);
+context.snapshotFixture.nodes['08ILO_SS1'].push([sampleTime + 600000, 6500]);
+snapshot = plain(evaluate('buildLatestSnapshot(snapshotFixture)'));
+assert.equal(snapshot.end, sampleTime + 600000); // A newly synced interval advances the fixed dashboard.
+assert.equal(snapshot.spread, 1500);
+assert.equal(snapshot.generation, 600);
+assert.equal(snapshot.requirement, 700);
+assert.equal(snapshot.prices.length, 3);
+context.snapshotFixture.nodes['08ILO_SS1'] = [[sampleTime + 900000, 1000]];
+assert.equal(evaluate('buildLatestSnapshot(snapshotFixture)'), null);
 
 // Midnight interval ends remain in the preceding trading date/hour; gaps stay gaps.
 const midnight = Date.parse('2026-08-24T00:00:00+08:00');
