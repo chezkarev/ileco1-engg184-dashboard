@@ -1,0 +1,15 @@
+{
+  "status": "connected",
+  "sourceVersion": "2bccfe6cd1989aeed269f097b49d77d5c6d2d45a6c522a197c4b6f071fcadc9e",
+  "syncedAt": "2026-11-22T04:17:26.924233+00:00",
+  "sheetUrl": "https://docs.google.com/spreadsheets/d/19k2xYy2pafhwmhX6kRGb7DP-0098qlL-vcyviyLeOW8/edit",
+  "nodeObservations": {
+    "08STBAR_SS1": 25931,
+    "08STBAR_SS2": 25931,
+    "08STBAR_SS3": 25931,
+    "08STBAR_T1L1": 25931,
+    "08STBAR_T2L2": 25931,
+    "08ILO_SS1": 25931
+  },
+  "regionalObservations": 25919
+}
