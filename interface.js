@@ -49,6 +49,14 @@ function initializeInterface() {
   for (const id of ['demandModel', 'forecastYear', 'demandAll']) $(id).onchange = renderDemand;
   document.querySelectorAll('[data-mapzoom]').forEach(button => button.onclick = () => drawPanay(button.dataset.mapzoom));
 
+  const originalDemandRender=renderDemand;
+  renderDemand=function(){
+    originalDemandRender();
+    const cards=document.querySelectorAll('.demand-cards .card');
+    if(cards.length){setIndicator(cards[0],history.at(-1)['Coincident Peak MW'],history.at(-2)['Coincident Peak MW'],'vs. previous historical year');
+    const year=Number($('forecastYear').value),field=annualColumn($('demandModel').value),row=annual.find(r=>r.Year===year),prior=annual.find(r=>r.Year===year-1);
+    setIndicator(cards[1],row[field],prior?prior[field]:83.86,'vs. previous year · model projection');}
+  };
   setupCalculator();
   organizeCalculator();
   const marketNotes = document.createElement('details');
@@ -71,6 +79,7 @@ function initializeInterface() {
     if (view.nodes) {
       if (activeView === 'market') enhanceMarketCharts();
       updateFilterState();
+      marketComparisonIndicators();
     }
     if (activeView === 'map') {
       drawPanay();

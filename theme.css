@@ -126,4 +126,61 @@ html[data-theme] .app[data-active-view] .dash-panel .dash-panel-title h2,
 html[data-theme] .app[data-active-view] .dash-panel .dash-panel-title>span { color: var(--accent-ink); }@media(max-width:760px) {
  html[data-theme] .app[data-active-view=dashboard] .dash-supplier-body { gap: 1px; padding: 4px 5px; }
  html[data-theme] .app[data-active-view=dashboard] .dash-capacity { gap: 0 6px; }
+}/* Observatory layout shared across routes. */
+html[data-theme=dark] { --bg:#061923; --surface:#0e2530; --surface-alt:#183541; --ink:#f2f7fa; --muted:#c1d5dc; --line:#3d626f; --rail-bg:#0a2635; --rail-active:#204b5b; --metric:#f5fbff; --accent-bg:#163b4b; --accent-ink:#f2f9fc; --orange:#ef943c; --teal:#55d5da; --map-water:#0a222d; --map-land:#285b60; --map-border:#72d4d8; }
+html[data-theme=light] { --bg:#eef3f6; --surface:#fff; --surface-alt:#e5edf2; --rail-bg:#123444; --rail-active:#326278; --accent-bg:#e1eaf0; --accent-ink:#163247; --metric:#0d293c; --orange:#b5611d; --teal:#17657b; }
+html[data-theme] .app[data-active-view] { grid-template-columns:190px minmax(0,1fr); }
+html[data-theme] .app[data-active-view] .rail { height:100dvh; width:190px; padding:18px 10px; background:var(--rail-bg); border-right:1px solid var(--line); }
+html[data-theme] .app[data-active-view] .rail-brand { flex-direction:row; justify-content:center; gap:10px; padding:0 0 24px; font-size:17px; font-weight:700; letter-spacing:1px; }
+html[data-theme] .app[data-active-view] .rail-brand svg { width:42px; height:42px; }
+html[data-theme] .app[data-active-view] .rail-nav { gap:7px; }
+html[data-theme] .app[data-active-view] .rail-nav button { flex-direction:row; justify-content:flex-start; gap:13px; padding:12px 14px; font-size:15px; min-height:46px; border-radius:5px; border-left:3px solid transparent; }
+html[data-theme] .app[data-active-view] .rail-nav button.active { border-left-color:var(--orange); }
+html[data-theme] .app[data-active-view] .rail-nav button[data-view=calculator] { margin:0; border:0; border-left:3px solid transparent; color:var(--rail-ink); }
+html[data-theme] .app[data-active-view] .rail-nav button[data-view=calculator].active { border-left-color:var(--orange); }
+html[data-theme] .app[data-active-view] .rail-nav.secondary { margin-top:auto; padding-top:14px; }
+html[data-theme] .app[data-active-view] .main { padding:18px 22px; }
+html[data-theme] .app[data-active-view] .panel,html[data-theme] .app[data-active-view] .dash-panel,html[data-theme] .app[data-active-view] .sidebar { border-radius:7px; }
+html[data-theme] .app[data-active-view] .dash-panel-title { border-radius:6px 6px 0 0; border-bottom:1px solid var(--line); padding:6px 12px; }
+html[data-theme] .app[data-active-view] .filters-primary { display:grid; grid-template-columns:minmax(160px,1fr) minmax(310px,2fr) minmax(185px,1fr); align-items:start; padding:12px 16px; gap:18px; }
+html[data-theme] .app[data-active-view] .date-controls { grid-template-columns:1fr 1fr; gap:5px 8px; }
+html[data-theme] .app[data-active-view] .filter-caption { margin:0 0 5px; font-size:13px; }
+html[data-theme] .app[data-active-view] .date-field label { display:none; }
+html[data-theme] .app[data-active-view] .filter-field>label { font-size:13px; margin:0 0 5px; }
+html[data-theme] .app[data-active-view] .resolution-field { display:block; grid-column:auto; }
+html[data-theme] .app[data-active-view] .resolution-field .segmented { width:100%; min-height:40px; }
+html[data-theme] .app[data-active-view] .preset { justify-content:flex-end; }
+html[data-theme] .app[data-active-view] .preset button { min-height:25px; padding:2px 9px; font-size:12px; }
+html[data-theme] .app[data-active-view] .filter-context { padding:7px 16px; font-size:12px; }
+html[data-theme] .app[data-active-view] .chart-options>summary { padding:9px 16px; font-size:14px; }
+.metric-change { display:block; font-size:13px; font-weight:650; color:var(--teal); line-height:1.2; margin-top:5px; font-variant-numeric:tabular-nums; }
+.metric-change small { display:block; color:var(--muted); font-size:11px; font-weight:400; margin:2px 0 0!important; }
+.metric-change.neutral { color:var(--muted); }
+html[data-theme] .app[data-active-view=dashboard] #dashboardView { grid-template-rows:120px minmax(0,1fr) 20px; }
+html[data-theme] .app[data-active-view=dashboard] .overview-stat { border-radius:6px; padding:8px 12px; }
+html[data-theme] .app[data-active-view=dashboard] .overview-stat>strong { font-size:clamp(26px,2.8vw,38px); }
+html[data-theme] .app[data-active-view=dashboard] .overview-stat .metric-change { font-size:12px; }
+html[data-theme] .app[data-active-view=dashboard] .overview-stat>span.help-target { cursor:pointer; text-decoration:underline dotted; text-underline-offset:3px; }
+html[data-theme] .app[data-active-view=dashboard] .latest-bus-row { grid-template-columns:1fr auto auto; gap:2px 6px; }
+html[data-theme] .app[data-active-view=dashboard] .latest-bus-row .metric-change { grid-column:3;grid-row:1;margin:0;font-size:11px; }
+html[data-theme] .app[data-active-view=dashboard] .latest-bus-row .metric-change small { display:none; }
+html[data-theme] .app[data-active-view=dashboard] .bus-price-track { display:none; }
+@media(max-width:1100px) { html[data-theme] .app[data-active-view] .filters-primary {grid-template-columns:160px 1fr;} html[data-theme] .app[data-active-view] .resolution-field {grid-column:1/-1;display:flex;align-items:center;gap:12px;} html[data-theme] .app[data-active-view] .resolution-field .segmented {width:250px;} }
+@media(max-width:760px) {
+ html[data-theme] .app[data-active-view] {display:block;}
+ html[data-theme] .app[data-active-view=dashboard] {display:grid;grid-template-columns:1fr;grid-template-rows:99px minmax(0,1fr);}
+ html[data-theme] .app[data-active-view] .rail {width:100%;height:auto;padding:6px 10px;}
+ html[data-theme] .app[data-active-view] .rail-brand {font-size:12px;padding:0;gap:4px;}
+ html[data-theme] .app[data-active-view] .rail-brand svg {width:26px;height:26px;}
+ html[data-theme] .app[data-active-view] .rail-nav.primary {display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:2px;}
+ html[data-theme] .app[data-active-view] .rail-nav.primary button {flex-direction:column;justify-content:center;gap:2px;padding:5px 1px;font-size:11px;min-height:44px;border-left:0;}
+ html[data-theme] .app[data-active-view] .rail-nav.secondary {margin:0;padding:0;}
+ html[data-theme] .app[data-active-view] .rail-nav.secondary button {padding:5px;font-size:12px;min-height:0;}
+ html[data-theme] .app[data-active-view] .main {padding:10px;}
+ html[data-theme] .app[data-active-view] .filters-primary {grid-template-columns:1fr;}
+ html[data-theme] .app[data-active-view] .resolution-field {grid-column:auto;}
+ html[data-theme] .app[data-active-view=dashboard] #dashboardView {grid-template-rows:150px minmax(0,1fr) 26px;}
+ html[data-theme] .app[data-active-view=dashboard] .overview-stat {padding:4px 6px;}
+ html[data-theme] .app[data-active-view=dashboard] .overview-stat>strong {font-size:24px;}
+ html[data-theme] .app[data-active-view=dashboard] .overview-stat .metric-change small {font-size:9px;}
 }

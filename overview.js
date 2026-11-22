@@ -60,6 +60,39 @@ function renderOverview() {
   $('latestBusPrices').innerHTML = snapshot.nodePrices.map(row => '<div class="latest-bus-row"><span>' + escapeChartText(row.name) + '</span><strong>' + price(row.value) + '</strong><div class="bus-price-track"><span style="width:' + (Math.abs(row.value || 0) / max * 100) + '%" class="' + (row.value < 0 ? 'negative' : '') + '"></span></div></div>').join('');
   $('overviewCompleteness').textContent = snapshot.prices.filter(row => Number.isFinite(row.y)).length + '/288 price intervals · ' + snapshot.regional.length + '/288 regional intervals';
   renderOverviewMap(snapshot);
+  updateComparisonIndicators(snapshot);
+}
+
+function comparisonMarkup(current, previous, label) {
+  if (!Number.isFinite(current) || !Number.isFinite(previous)) return '<span class="metric-change neutral">— Comparison unavailable</span>';
+  const difference=current-previous;
+  const percent=previous>0?Math.abs(difference)/previous*100:null;
+  return '<span class="metric-change '+(difference>0?'up':difference<0?'down':'neutral')+'" title="Previous value: '+num(previous,4)+'">'+(difference>0?'▲ +':difference<0?'▼ −':'• ')+(percent==null?num(Math.abs(difference))+' absolute':num(percent,1)+'%')+'<small>'+label+'</small></span>';
+}
+function setIndicator(element,current,previous,label) {
+  element.querySelector('.metric-change')?.remove();
+  element.insertAdjacentHTML('beforeend',comparisonMarkup(current,previous,label));
+}
+function updateComparisonIndicators(snapshot) {
+  const time=snapshot.end-86400000;
+  const region=D.regional.find(r=>r[0]===time);
+  const field=(row,name,fields)=>row?row[fields.indexOf(name)+1]:null;
+  const prices=snapshot.nodePrices.map(n=>field(D.nodes[n.name].find(r=>r[0]===time),'LMP',D.nodeFields));
+  const reference=field(D.nodes[snapshot.reference].find(r=>r[0]===time),'LMP',D.nodeFields);
+  const spread=prices.every(Number.isFinite)?Math.max(...prices)-Math.min(...prices):null;
+  [[snapshot.price,reference],[snapshot.generation,field(region,'GENERATION',D.regionalFields)],[snapshot.requirement,field(region,'MKT_REQT',D.regionalFields)],[snapshot.spread,spread]].forEach((pair,i)=>setIndicator(document.querySelectorAll('.overview-stat')[i],...pair,'vs. same interval yesterday'));
+  document.querySelectorAll('.latest-bus-row').forEach((row,i)=>setIndicator(row,snapshot.nodePrices[i].value,prices[i],'vs. yesterday'));
+  const definitions={nowPrice:'Wholesale locational marginal price at 08STBAR_SS1, in PHP/kWh. This is not a retail tariff.',nowGeneration:'Total generation in the Visayas regional market records, in MW. It is not Panay-only generation.',nowRequirement:'Visayas market requirement, in MW. This is distinct from ILECO I demand.',nowSpread:'Highest minus lowest price across the six candidate Panay buses at the same observed interval.'};
+  for(const [id,definition] of Object.entries(definitions)){const label=$(id).nextElementSibling;markDefinition(label,label.textContent,definition);}
+}
+function marketComparisonIndicators() {
+  if(!view.nodes)return;
+  const nodes=D.nodes[view.node].filter(r=>r[0]>view.a-86400000&&r[0]<=view.b-86400000);
+  const regional=D.regional.filter(r=>r[0]>view.a-86400000&&r[0]<=view.b-86400000);
+  const last=view.nodes.at(-1),previous=last&&D.nodes[view.node].find(r=>r[0]===last[0]-86400000);
+  setIndicator($('meanPrice').parentElement,mean(view.nodes.map(r=>val(r,'LMP','node'))),mean(nodes.map(r=>val(r,'LMP','node'))),'vs. window shifted back 1 day');
+  setIndicator($('latestPrice').parentElement,last?val(last,'LMP','node'):null,previous?val(previous,'LMP','node'):null,'vs. same interval yesterday');
+  setIndicator($('generation').parentElement,mean(view.reg.map(r=>val(r,'GENERATION','regional'))),mean(regional.map(r=>val(r,'GENERATION','regional'))),'vs. window shifted back 1 day');
 }
 
 function renderOverviewMap(snapshot) {
