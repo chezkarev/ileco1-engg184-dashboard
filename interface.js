@@ -1,6 +1,6 @@
 /* Navigation, controls and chart inspection. Dataset/model calculations live in app.js. */
 const PLATFORM_VIEWS = {
-  dashboard: { label: 'Dashboard', title: 'Panay at a glance', description: 'Latest market dashboard' },
+  dashboard: { label: 'Dashboard', title: 'Panay Energy Dashboard', description: 'Latest market dashboard' },
   market: { label: 'Market', title: 'Market analysis', description: 'Panay market overview' },
   calculator: { label: 'Calculator', title: 'Load-shift calculator', description: 'Load-shift calculator' },
   map: { label: 'Network', title: 'Panay bus locations', description: 'Panay bus map' },
@@ -122,7 +122,7 @@ function navigateView(key, resetScroll = true) {
   document.querySelector('h1').textContent = PLATFORM_VIEWS[key].title;
   $('export').hidden = !['market', 'map', 'demand'].includes(key);
   $('export').textContent = key === 'demand' ? 'Export annual forecast' : 'Export selected CSV';
-  document.querySelector('.top .badge').textContent = key === 'dashboard' ? 'Auto refresh · 5 min' : key === 'calculator' ? 'Energy-only scenario' : key === 'demand' ? 'Annual study · 2024 cutoff' : key === 'map' ? 'Approximate station areas' : key === 'project' ? 'ENGG 184 · project brief' : 'Observed RTD · PHT';
+  document.querySelector('.top .badge').textContent = key === 'dashboard' ? 'Manual refresh' : key === 'calculator' ? 'Energy-only scenario' : key === 'demand' ? 'Annual study · 2024 cutoff' : key === 'map' ? 'Approximate station areas' : key === 'project' ? 'ENGG 184 · project brief' : 'Observed RTD · PHT';
   document.querySelector('.footer').firstElementChild.textContent = key === 'demand' ? 'Source: ENGG 184 notebook · saved annual demand, forecasts and backtests' : 'Source: IEMOP RTD via Google Sheets · methods and station caveats in Sources & methods';
   if (marketControls) render();
   if (key === 'dashboard') renderOverview();
@@ -132,6 +132,7 @@ function navigateView(key, resetScroll = true) {
   }
   if (key === 'sources') $('rangeCaption').textContent = 'Data provenance, aggregation, geography and model interpretation';
   if (key === 'project') $('rangeCaption').textContent = 'Philippine electricity markets · research and utility demand planning';
+  updateObservationTime();
   window.history.replaceState(null, '', '#' + key);
   if (resetScroll) window.scrollTo({ top: 0, behavior: 'instant' });
 }
@@ -269,7 +270,8 @@ function enhanceMarketCharts() {
 
 function drawAnalyticalSeries(id, series, options = {}) {
   const { c, w, h, el } = canvas(id);
-  const L = 56, R = 24, T = 30, B = 36, pw = w - L - R, ph = h - T - B;
+  if (options.compact) c.font = '13px Segoe UI, Arial';
+  const L = options.compact ? 48 : 56, R = options.compact ? 12 : 24, T = options.compact ? 19 : 30, B = options.compact ? 28 : 36, pw = w - L - R, ph = h - T - B;
   const all = series.flatMap(item => item.data.filter(point => point.y != null));
   if (!all.length) return;
   const xmin = options.xmin ?? Math.min(...all.map(point => point.x));
@@ -293,7 +295,7 @@ function drawAnalyticalSeries(id, series, options = {}) {
     c.fillText(num(hi - (hi - lo) * i / 4, options.decimals ?? 0), L - 9, yy + 4);
   }
   const ticks = options.ticks || Array.from({ length: 5 }, (_, i) => Math.round(xmin + (xmax - xmin) * i / 4));
-  const stride = w < 500 && ticks.length > 6 ? 2 : 1;
+  const stride = options.compact && w < 360 ? 2 : w < 500 && ticks.length > 6 ? 2 : 1;
   ticks.forEach((tick, i) => {
     if (i % stride && i !== ticks.length - 1) return;
     c.textAlign = i === 0 ? 'left' : i === ticks.length - 1 ? 'right' : 'center';
