@@ -3,7 +3,7 @@ const PLATFORM_VIEWS = {
   dashboard: { label: 'Dashboard', title: 'Panay Energy Dashboard', description: 'Latest market dashboard' },
   market: { label: 'Market', title: 'Market analysis', description: 'Panay market overview' },
   calculator: { label: 'Calculator', title: 'Load-shift calculator', description: 'Load-shift calculator' },
-  map: { label: 'Network', title: 'Panay bus locations', description: 'Panay bus map' },
+  map: { label: 'Bus Map', title: 'Panay bus locations', description: 'Panay bus map' },
   demand: { label: 'Demand', title: 'ILECO I · demand & outlook', description: 'ILECO I demand' },
   sources: { label: 'Methods', title: 'Data sources & methods', description: 'Sources & methods' },
   project: { label: 'About', title: 'About the project', description: 'About the project' }
@@ -14,15 +14,17 @@ function initializeInterface() {
   icons.dashboard = '<rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/>';
   icons.calculator = '<rect x="5" y="2" width="14" height="20" rx="1"/><path d="M8 6h8M8 11h2M14 11h2M8 15h2M14 15h2M8 19h2M14 19h2"/>';
   palette.splice(0, 6, '#b9650d', '#444765', '#788ba4', '#5e8584', '#a06f62', '#9693aa');
-  document.querySelector('.rail-brand').innerHTML = panayLogo + '<span>PANAY</span>';
+  document.querySelector('.rail-brand').innerHTML = panayLogo + '<span>PANAY<br>ENERGY</span><small>Market Observatory</small>';
   for (const group of ['primary', 'secondary']) {
-    const keys = group === 'primary' ? ['dashboard', 'market', 'calculator', 'map', 'demand'] : ['sources', 'project'];
+    const keys = group === 'primary' ? ['dashboard', 'market', 'map', 'demand', 'calculator'] : ['sources', 'project'];
     document.querySelector('.rail-nav.' + group).innerHTML = keys.map(key => {
       const item = PLATFORM_VIEWS[key];
       return '<button data-view="' + key + '" aria-label="' + item.description + '" aria-controls="' + key + 'View"><svg viewBox="0 0 24 24" aria-hidden="true">' + icons[key] + '</svg><span>' + item.label + '</span></button>';
     }).join('');
   }
 
+  document.querySelector('.rail-nav.secondary').insertAdjacentHTML('beforebegin','<div class="reference-label">REFERENCE</div>');
+  document.querySelector('.rail').insertAdjacentHTML('beforeend',`<svg class="rail-landscape" viewBox="0 0 210 125" aria-hidden="true"><path d="M0 50Q32 12 68 46T145 38T210 43V125H0Z" fill="#285767"/><path d="M0 64Q50 34 91 63T210 50V125H0Z" fill="#3e7581"/><path d="M0 84Q65 47 120 76T210 65V125H0Z" fill="#193e50"/><path d="M0 109Q100 94 210 96L210 104Q95 95 0 114Z" fill="#ce792d"/><g fill="none" stroke="#dbe9ea" stroke-width="2"><path d="M132 100V30M132 30L114 11M132 30L156 25M132 30L126 53M172 101V52M172 52L160 39M172 52L190 48M172 52L168 69"/><circle cx="132" cy="30" r="2"/><circle cx="172" cy="52" r="2"/></g><g stroke="#092a38" fill="none" stroke-width="1.3"><path d="M31 104L42 61L54 105M35 87H50M37 78H47M39 69H45M25 70H59M27 74H57M31 104L50 87L37 78L45 69M54 105L35 87L47 78L39 69"/></g></svg>`);
   const main = document.querySelector('.main');
   const market = document.createElement('div');
   market.id = 'marketView';

@@ -199,4 +199,49 @@ html[data-theme] .app[data-active-view=dashboard] .bus-price-track { display:non
  html[data-theme] .app[data-active-view=dashboard] .dash-buses {grid-column:1/3;grid-row:3;}
  html[data-theme] .app[data-active-view=dashboard] .dash-footnote {flex-wrap:wrap;}
  html[data-theme] .app[data-active-view] .metric-change small {white-space:normal;}
+}/* Reference branding and fixed observatory sidebar, shared by all views. */
+html[data-theme] .app[data-active-view] {grid-template-columns:208px minmax(0,1fr);}
+html[data-theme] .app[data-active-view] .rail {width:208px;padding:20px 10px 125px; background:linear-gradient(160deg,#123442,#06202e);overflow:hidden;}
+html[data-theme] .app[data-active-view] .rail-brand {display:grid;grid-template-columns:45px auto;gap:8px 12px;justify-content:start;padding:0 15px 26px;align-items:center;}
+html[data-theme] .app[data-active-view] .rail-brand>span {font-size:19px;line-height:1.08;letter-spacing:.5px;}
+html[data-theme] .app[data-active-view] .rail-brand>small {grid-column:1/-1;font-size:14px;letter-spacing:0;font-weight:400;white-space:nowrap;}
+html[data-theme] .app[data-active-view] .rail-brand svg {width:44px;height:44px;}
+html[data-theme] .app[data-active-view] .rail-brand svg rect {display:none;}
+html[data-theme] .app[data-active-view] .rail-nav button {min-height:43px;padding:9px 15px;font-weight:500;}
+html[data-theme] .app[data-active-view] .rail-nav button svg {width:21px;height:21px;}
+html[data-theme] .app[data-active-view] .rail-nav button.active {background:#2b5c6e;border-left:4px solid #e58b39;}
+html[data-theme] .app[data-active-view] .reference-label {margin-top:18px;padding:17px 15px 8px;border-top:1px solid #54808d;color:#b6d0da;font-size:12px;font-weight:600;letter-spacing:1px;}
+html[data-theme] .app[data-active-view] .rail-nav.secondary {margin-top:0;padding-top:0;border-top:0;}
+html[data-theme] .app[data-active-view] .theme-control {margin-top:auto;position:relative;z-index:2;}
+.rail-landscape {position:absolute;left:0;bottom:0;width:100%;height:125px;pointer-events:none;}
+.metric-change.up {color:#40d882;}.metric-change.down {color:#ff8b84;}
+.overview-stat:first-child .metric-change.down,.latest-bus-row .metric-change.down,#meanPrice~.metric-change.down {color:#40d882;}
+.overview-stat:first-child .metric-change.up,.latest-bus-row .metric-change.up {color:#ff8b84;}
+html[data-theme=light] .metric-change.up {color:#187845;}html[data-theme=light] .metric-change.down {color:#b93932;}
+html[data-theme=light] .overview-stat:first-child .metric-change.down,html[data-theme=light] .latest-bus-row .metric-change.down {color:#187845;}
+html[data-theme=light] .overview-stat:first-child .metric-change.up,html[data-theme=light] .latest-bus-row .metric-change.up {color:#b93932;}
+@media(max-height:760px) and (min-width:761px) {
+ html[data-theme] .app[data-active-view] .rail {padding-top:12px;padding-bottom:92px;}
+ html[data-theme] .app[data-active-view] .rail-brand {padding-bottom:16px;}
+ html[data-theme] .app[data-active-view] .rail-nav {gap:3px;}
+ html[data-theme] .app[data-active-view] .rail-nav button {min-height:38px;padding:7px 13px;}
+ html[data-theme] .app[data-active-view] .reference-label {margin-top:10px;padding-top:12px;}
+ .rail-landscape {height:90px;}
 }
+@media(max-width:760px) {
+ html[data-theme] .app[data-active-view] {grid-template-columns:1fr;}
+ html[data-theme] .app[data-active-view] .rail {width:100%;padding:5px 10px;overflow:visible;background:#0a2635;}
+ html[data-theme] .app[data-active-view] .rail-brand {display:flex;padding:0;gap:5px;}
+ html[data-theme] .app[data-active-view] .rail-brand>span {font-size:11px;}
+ html[data-theme] .app[data-active-view] .rail-brand svg {width:25px;height:25px;}
+ html[data-theme] .app[data-active-view] .rail-brand>small,.rail-landscape,.reference-label {display:none;}
+ html[data-theme] .app[data-active-view] .rail-nav button {min-height:0;padding:5px 2px;}
+ html[data-theme] .app[data-active-view] .theme-control {margin:0;}
+}html[data-theme=dark] {--increase:#40d882;--decrease:#ff8b84;}
+html[data-theme=light] {--increase:#187845;--decrease:#b93932;}
+html[data-theme] .app[data-active-view] .metric-change.up {color:var(--increase)!important;}
+html[data-theme] .app[data-active-view] .metric-change.down {color:var(--decrease)!important;}
+html[data-theme] .app[data-active-view] .overview-stat:first-child .metric-change.down,
+html[data-theme] .app[data-active-view] .latest-bus-row .metric-change.down {color:var(--increase)!important;}
+html[data-theme] .app[data-active-view] .overview-stat:first-child .metric-change.up,
+html[data-theme] .app[data-active-view] .latest-bus-row .metric-change.up {color:var(--decrease)!important;}
