@@ -109,6 +109,23 @@ function renderMarketForecast(){
  drawAnalyticalSeries('marketForecastChart',[{name:'Observed hourly mean',color:'#16476b',data:f.observed},{name:f.model+' · forecast',color:'#b9650d',dashed:true,data:[{x:f.origin,y:f.observed.at(-1).y},...f.points]}],{xmin:start,xmax:end,ticks:Array.from({length:5},(_,i)=>start+i*(end-start)/4),formatX:t=>new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Manila',day:'2-digit',month:'short',hour:'2-digit',hourCycle:'h23'}).format(t),formatTooltip:t=>stamp(t)+' PHT',unit:'PHP/kWh',decimals:2,maxGap:5400000,compact:true});
 }
 
+// ILECO I PSPP 2026–2035, p.11; these are reported supply capacities, not MWh shares.
+function supplierPortfolioMarkup() {
+  const suppliers = [
+    ['GCGI', 'Green Core Geothermal, Inc.', 18, '#215c79'],
+    ['PEDC U3', 'Panay Energy Development Corp. · Unit 3', 8, '#b75e13'],
+    ['PEDC U1–2', 'Panay Energy Development Corp. · Units 1 & 2', 3.5, '#7b7398'],
+    ['SPI', 'Sual Power Inc.', 15, '#398879']
+  ];
+  const total = suppliers.reduce((sum, row) => sum + row[2], 0);
+  return `<div class="supplier-total"><strong>${total.toFixed(1)} <small>MW</small></strong><span>Reported supply capacity · PSPP 2026–2035</span></div>
+    <div class="supplier-stack" role="img" aria-label="Reported supply capacity: GCGI 18 MW; PEDC Unit 3 8 MW; PEDC Units 1 and 2 3.5 MW; SPI 15 MW. Total 44.5 MW. Not actual energy shares.">${suppliers.map(([label, name, mw, color]) => `<span style="flex:${mw};background:${color}" title="${name}: ${mw} MW (${(mw / total * 100).toFixed(1)}% of listed capacity)"></span>`).join('')}</div>
+    <ul class="supplier-list" aria-label="Suppliers listed in ILECO I's plan">${suppliers.map(([label, name, mw, color]) => `<li><span title="${name}"><i style="background:${color}"></i>${label}</span><b>${mw} MW</b></li>`).join('')}</ul>
+    <p class="supplier-note">WESM: additional spot purchases; no fixed MW allocation.</p>
+    <details class="supplier-details"><summary>Names, status & historical suppliers</summary><p>${suppliers.map(([, name, mw]) => `${name}: ${mw} MW`).join('; ')}.</p><p>SPI: delivery began 26 Nov 2025 (p.5); the planning table still classifies 15 MW as pending (p.8). GNPK and FDC provided emergency supply in 2025, replaced by SPI (p.5). These are not additional current capacity segments.</p><p>Capacity shares are not actual generation, energy-purchase shares or bus-level supplier assignments. The plan is dated 3 Nov 2026; this panel is not a live contract registry.</p></details>
+    <div class="supplier-source">Source: <a href="https://ileco1.com/wp-content/uploads/2026/11/2026-PSPP-ILECO-I.pdf#page=11" target="_blank" rel="noopener">ILECO I PSPP 2026–2035 · pp.5, 8, 11</a> · <a href="https://ileco1.com/power-supply-procurement-plan-2026-2035/" target="_blank" rel="noopener">Official publication</a></div><div id="overviewCompleteness"></div>`;
+}
+
 function overviewMarkup() {
   return `<section class="overview-summary" aria-label="Latest interval statistics">
     <div class="overview-stat"><strong id="nowPrice">—</strong><span>Sta. Barbara price <small>PHP/kWh</small></span></div>
@@ -119,7 +136,7 @@ function overviewMarkup() {
   <div class="dash-grid">
     <section class="dash-panel dash-map"><div class="dash-panel-title"><h2>Panay bus locations</h2><button data-view="map" class="dash-text-button">Full map</button></div><div class="dash-map-body"><svg id="overviewMap" viewBox="0 0 500 390" role="group" aria-label="Panay map showing the approximate Sta. Barbara and Iloilo 1 station areas"></svg><div id="overviewMapReadout" aria-live="polite"></div></div></section>
     <section class="dash-panel dash-price"><div class="dash-panel-title"><h2 id="dashboardPriceTitle">Spot price · past 24 hours</h2><div class="dashboard-price-controls"><select id="dashboardNode" aria-label="Dashboard price bus"></select></div></div><div class="overview-chart"><canvas id="overviewPrice" role="img" aria-label="Selected bus price outlook"></canvas></div></section>
-    <section class="dash-panel dash-supplier"><div class="dash-panel-title"><h2>Power supplier · regional context</h2></div><div class="dash-supplier-body"><strong>Panay Energy Development Corp.</strong><div class="dash-capacity"><b>314 <small>MW</small></b><span>164 + 150 MW installed</span></div><p>Coal-fired generation · Iloilo City</p><p class="supplier-note">Regional generator; bus-level suppliers unverified.</p><a href="https://www.gbp.com.ph/power-generation/our-solutions-panay-mindoro/" target="_blank" rel="noopener">PEDC / official plant profile</a><div id="overviewCompleteness"></div></div></section>
+    <section class="dash-panel dash-supplier"><div class="dash-panel-title"><h2>ILECO I · electricity supply portfolio</h2></div><div class="dash-supplier-body">${supplierPortfolioMarkup()}</div></section>
     <section class="dash-panel dash-regional"><div class="dash-panel-title"><h2>Generation & requirement</h2><span>MW</span></div><div class="overview-chart secondary"><canvas id="overviewRegional" role="img" aria-label="Visayas generation and market requirement for the latest 24 hours"></canvas></div><div class="dash-legend"><span><i></i>Generation</span><span><i></i>Requirement</span></div></section>
     <section class="dash-panel dash-buses"><div class="dash-panel-title"><h2>Latest bus prices</h2><span>PHP/kWh</span></div><div id="latestBusPrices" class="latest-bus-prices"></div></section>
   </div>
