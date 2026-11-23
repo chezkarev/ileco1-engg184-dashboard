@@ -14,7 +14,7 @@ function initializeInterface() {
   icons.dashboard = '<rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/>';
   icons.calculator = '<rect x="5" y="2" width="14" height="20" rx="1"/><path d="M8 6h8M8 11h2M14 11h2M8 15h2M14 15h2M8 19h2M14 19h2"/>';
   palette.splice(0, 6, '#b9650d', '#444765', '#788ba4', '#5e8584', '#a06f62', '#9693aa');
-  document.querySelector('.rail-brand').innerHTML = panayLogo + '<span>ILECO I</span><small>Market Intelligence</small>';
+  document.querySelector('.rail-brand').innerHTML = '<img class="ileco-logo" src="ileco-i-logo.png" alt="ILECO I logo"><span>ILECO I</span><small>Market Intelligence</small><small class="academic-note">ENGG 184 academic prototype<br>Not for operational deployment</small>';
   for (const group of ['primary', 'secondary']) {
     const keys = group === 'primary' ? ['dashboard', 'market', 'map', 'demand', 'calculator'] : ['sources', 'project'];
     document.querySelector('.rail-nav.' + group).innerHTML = keys.map(key => {

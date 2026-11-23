@@ -381,3 +381,8 @@ html[data-theme] .network-views button[aria-pressed=true] {background:var(--surf
 .app[data-active-view=dashboard] .supplier-source {font-size:10px;line-height:1.4;}
 .app[data-active-view=dashboard] .supplier-source a {font-size:10px;}
 @media(max-width:600px){.app[data-active-view=dashboard] .supplier-list{grid-template-columns:1fr;}}
+/* Preserve the supplied official logo colors on a neutral backing. */
+html[data-theme] .app[data-active-view] .rail-brand .ileco-logo {width:48px;height:50px;object-fit:contain;background:#fff;padding:3px;border:1px solid #a0b5bd;box-sizing:border-box;}
+html[data-theme] .app[data-active-view] .rail-brand .academic-note {display:block;grid-column:1/-1;font-size:11px;line-height:1.45;white-space:normal;color:#d9e6eb;border-top:1px solid #486975;padding-top:7px;margin-top:2px;}
+.project-emblem .ileco-logo {width:90px;height:94px;object-fit:contain;background:#fff;padding:4px;}
+@media(max-width:760px){html[data-theme] .app[data-active-view] .rail-brand{display:grid;grid-template-columns:32px auto;gap:3px 8px;}html[data-theme] .app[data-active-view] .rail-brand .ileco-logo{width:30px;height:32px;}html[data-theme] .app[data-active-view] .rail-brand .academic-note{font-size:10px;padding-top:2px;margin:0;}}
