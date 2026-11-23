@@ -347,3 +347,21 @@ html[data-theme] .network-views button[aria-pressed=true] {background:var(--surf
 .network-north {font-size:18px;}
 .network-station-hint {height:64px;min-height:64px;overflow:auto;}
 .network-station {pointer-events:bounding-box;}
+/* Brief interpretation below both maps, with room on short desktop screens. */
+.network-explanation {border-top:1px solid var(--line);margin-top:12px;padding-top:10px;color:var(--ink);}
+.network-explanation h2 {font-size:14px;margin:0 0 6px;}
+.network-explanation-grid {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px;}
+.network-explanation-grid p {font-size:12px;line-height:1.45;margin:0;}
+.network-explanation-grid strong {display:block;margin-bottom:3px;}
+.network-reference-compact {margin-top:10px;gap:3px 14px;}
+@media(min-width:1001px){
+ #networkPanay {height:clamp(240px,calc(100dvh - 430px),390px);margin-top:10px;}
+ .network-split .network-scroll {height:clamp(170px,calc(100dvh - 500px),330px);}
+ .network-station-hint {height:48px;min-height:48px;font-size:11px;line-height:1.4;}
+ .network-split>.panel {padding:14px;}
+}
+@media(max-width:760px){.network-explanation-grid{grid-template-columns:1fr;gap:10px;}}
+@media(min-width:1001px){#networkPanay{height:clamp(220px,calc(100dvh - 450px),390px);}}
+.network-explanation{margin-top:10px;padding-top:8px;}
+.network-reference-compact details{width:auto;}
+.network-reference-compact details[open]{width:100%;}
