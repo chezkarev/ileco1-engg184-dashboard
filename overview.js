@@ -92,6 +92,7 @@ function initializeMarketForecast(){
  };
 }
 function renderMarketForecast(){
+ if(!$('experimentalForecast').open)return;
  const last=view.nodes?.at(-1),context=$('marketForecastContext'),status=$('marketForecastStatus'),method=$('marketForecastMethod');
  $('marketForecastChart').parentElement.hidden=false;
  if(!last){marketForecastResult=null;context.textContent='No observations in the selected window.';status.textContent='Select a date range with observed prices.';method.textContent='';$('marketForecastChart').parentElement.hidden=true;$('exportPriceForecast').disabled=true;return;}

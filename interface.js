@@ -33,8 +33,11 @@ function initializeInterface() {
   const content = main.querySelector('.content');
   main.insertBefore(market, cards);
   market.append(cards, content);
-  content.insertAdjacentHTML('beforebegin',marketForecastMarkup());
+  content.insertAdjacentHTML('afterend','<details id="experimentalForecast" class="market-notes"><summary>Experimental price forecast · not independently verified</summary>'+marketForecastMarkup()+'</details>');
   initializeMarketForecast();
+  $('experimentalForecast').addEventListener('toggle',()=>{
+    if($('experimentalForecast').open && activeView==='market') renderMarketForecast();
+  });
   for (const [key, markup] of [['dashboard', overviewMarkup()], ['calculator', '<div class="calculator-page-intro"><span class="feature-label">Decision tool</span><p>Turn historical price differences into a flexible-load scenario. Choose a bus and dates above, then compare two load windows.</p></div><div id="calculatorWorkspace"></div>'], ['map', mapMarkup()], ['demand', demandMarkup()], ['sources', sourcesMarkup()], ['project', projectMarkup()]]) {
     const page = document.createElement('div');
     page.id = key + 'View';
@@ -73,6 +76,7 @@ function initializeInterface() {
   marketAction.className = 'market-action';
   marketAction.innerHTML = '<div><strong>Put price differences to work</strong><span>Compare the energy cost of moving a flexible load.</span></div><button data-open-calculator>Open load-shift calculator</button>';
   market.insertBefore(marketAction, marketNotes);
+  market.append($('experimentalForecast'));
   document.querySelectorAll('[data-open-calculator]').forEach(button => button.onclick = () => navigateView('calculator'));
   const originalRender = render;
   render = function () {
