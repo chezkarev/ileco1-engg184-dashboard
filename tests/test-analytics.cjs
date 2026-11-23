@@ -44,6 +44,32 @@ assert.equal(overviewBefore.price, data.nodes['08STBAR_SS1'].at(-1)[data.nodeFie
 fields.priceUnit.value = 'mwh';
 assert.deepEqual(plain(evaluate('buildLatestSnapshot(D)')), overviewBefore);
 fields.priceUnit.value = 'kwh';
+for(const name of Object.keys(data.nodes)){
+  const chosen=plain(evaluate('buildLatestSnapshot(D, '+JSON.stringify(name)+')'));
+  assert.equal(chosen.reference,name);
+  assert.equal(chosen.price,data.nodes[name].find(r=>r[0]===chosen.end)[data.nodeFields.indexOf('LMP')+1]);
+}
+// Forecasts retain daily shape and select the exact daily drift on a controlled
+// rising series. Future mutations cannot change a forecast made at an earlier origin.
+context.forecastRows=[];
+const hour=3600000, origin=Date.parse('2026-11-21T00:00:00+08:00');
+for(let h=0;h<12*24;h++) for(let slot=1;slot<=12;slot++){
+  const end=origin-(12*24-h)*hour+slot*300000;
+  context.forecastRows.push([end,(3+Math.floor(h/24)*0.2+(h%24===18?4:0))*1000]);
+}
+context.forecastOrigin=origin;
+const forecast=plain(evaluate("buildPriceForecast(forecastRows,['LMP'],forecastOrigin)"));
+assert.equal(forecast.points.length,24);
+assert.equal(forecast.points[0].x,origin+hour);
+assert.equal(forecast.points.at(-1).x,origin+24*hour);
+assert.equal(forecast.days,7);
+assert.equal(forecast.model,'Daily pattern + recent daily trend');
+assert.ok(forecast.mae<1e-10);
+assert.equal(forecast.peakHours[0],origin+19*hour);
+context.forecastRows.push([origin+300000,999999999]);
+assert.deepEqual(plain(evaluate("buildPriceForecast(forecastRows,['LMP'],forecastOrigin)")),forecast);
+context.forecastRows=context.forecastRows.filter(r=>r[0]!==origin-300000);
+assert.equal(evaluate("buildPriceForecast(forecastRows,['LMP'],forecastOrigin).points.length"),0);
 const sampleTime = Date.parse('2026-11-20T00:00:00+08:00');
 context.snapshotFixture = {
   nodeFields: ['LMP'], regionalFields: ['GENERATION', 'MKT_REQT'],
