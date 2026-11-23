@@ -3,7 +3,7 @@ const PLATFORM_VIEWS = {
   dashboard: { label: 'Dashboard', title: 'Panay Energy Dashboard', description: 'Latest market dashboard' },
   market: { label: 'Market', title: 'Market analysis', description: 'Panay market overview' },
   calculator: { label: 'Calculator', title: 'Load-shift calculator', description: 'Load-shift calculator' },
-  map: { label: 'Bus Map', title: 'Panay bus locations', description: 'Panay bus map' },
+  map: { label: 'Bus Map', title: 'Panay bus connections', description: 'Panay bus map' },
   demand: { label: 'Demand', title: 'ILECO I · demand & outlook', description: 'ILECO I demand' },
   sources: { label: 'Methods', title: 'Data sources & methods', description: 'Sources & methods' },
   project: { label: 'About', title: 'About the project', description: 'About the project' }
@@ -42,7 +42,7 @@ function initializeInterface() {
     const page = document.createElement('div');
     page.id = key + 'View';
     page.className = 'page-view';
-    page.innerHTML = markup;
+    page.innerHTML = key==='map' ? networkMapMarkup() : markup;
     main.insertBefore(page, main.querySelector('.footer'));
   }
 
@@ -81,6 +81,7 @@ function initializeInterface() {
   const originalRender = render;
   render = function () {
     if (activeView === 'dashboard') { renderOverview(); return; }
+    if (activeView === 'map') { renderNetworkMap(); return; }
     if (!['market', 'map', 'calculator'].includes(activeView)) return;
     originalRender();
     renderCalculator();
@@ -88,10 +89,6 @@ function initializeInterface() {
       if (activeView === 'market') { enhanceMarketCharts(); renderMarketForecast(); }
       updateFilterState();
       marketComparisonIndicators();
-    }
-    if (activeView === 'map') {
-      drawPanay();
-      stationPanel(stations[stationChoice].nodes.includes(view.node) ? stationChoice : (stations.sta.nodes.includes(view.node) ? 'sta' : 'ilo'));
     }
     if (activeView === 'calculator') $('rangeCaption').textContent = $('node').value + ' · ' + $('start').value + ' to ' + $('end').value + ' · historical price scenario';
   };
@@ -110,7 +107,6 @@ function initializeInterface() {
     clearTimeout(window.platformResizeTimer);
     window.platformResizeTimer = setTimeout(() => {
       if (activeView === 'demand') renderDemand();
-      if (activeView === 'map') drawPanay();
     }, 180);
   });
   setupDefinitions();
@@ -134,16 +130,23 @@ function navigateView(key, resetScroll = true) {
     }
   });
   if (definitionBubble) hideDefinition();
-  const marketControls = key === 'market' || key === 'map' || key === 'calculator';
+  const marketControls = key === 'market' || key === 'calculator';
   $('marketFilters').hidden = !marketControls;
   $('mobileControls').hidden = !marketControls;
+  document.querySelector('.connection').hidden = key==='map';
+  $('refresh').hidden=key==='map';
   document.querySelector('h1').textContent = PLATFORM_VIEWS[key].title;
-  $('export').hidden = !['market', 'map', 'demand'].includes(key);
+  $('export').hidden = !['market', 'demand'].includes(key);
   $('export').textContent = key === 'demand' ? 'Export annual forecast' : 'Export selected CSV';
   document.querySelector('.top .badge').textContent = key === 'dashboard' ? 'Manual refresh' : key === 'calculator' ? 'Energy-only scenario' : key === 'demand' ? 'Annual study · 2024 cutoff' : key === 'map' ? 'Approximate station areas' : key === 'project' ? 'ENGG 184 · project brief' : 'Observed RTD · PHT';
   document.querySelector('.footer').firstElementChild.textContent = key === 'demand' ? 'Source: ENGG 184 notebook · saved annual demand, forecasts and backtests' : 'Source: IEMOP RTD via Google Sheets · methods and station caveats in Sources & methods';
   if (marketControls) render();
   if (key === 'dashboard') renderOverview();
+  if (key === 'map') {
+    renderNetworkMap();
+    $('rangeCaption').textContent='IEMOP single-line connections · Sta. Barbara & Iloilo 1 · effective 4 Nov 2026';
+    document.querySelector('.top .badge').textContent='Network model · 4 Nov 2026';
+  }
   if (key === 'demand') {
     renderDemand();
     $('rangeCaption').textContent = 'Annual coincident peak · history 2000–2024 · projections 2025–2034';
@@ -364,4 +367,42 @@ function enhanceValidationBars() {
       return '<strong>' + escapeChartText(metric.Model) + '</strong>' + chartRows([{ color: '#b9650d', label: 'Rolling MAE', value: num(metric.MAE, 3) + ' MW' }]) + '<div class="inspector-note">2015–2024 · one-year-ahead · n = 10</div>';
     }
   });
+}
+
+/* The original IEMOP PDF supplies the electrical geometry. Overlay coordinates
+   use its rotated page coordinates (points), not geographic coordinates. */
+const IEMOP_NETWORK_PAGE='https://www.iemop.ph/market-reports/visayas-mnm/';
+const IEMOP_NETWORK_PDF=IEMOP_NETWORK_PAGE+'?md_file=L3Zhci93d3cvaHRtbC93cC1jb250ZW50L3VwbG9hZHMvZG93bmxvYWRzL3JlcG9ydHMvdmlzYXlhcy1tbm0vTU5NX1NMRF9WSVNfMjAyNjExMDQucGRm';
+const NETWORK_NODES=[
+ {code:'08STBAR_SS1',station:'Sta. Barbara',voltage:'13.8 kV',box:[15.8,262.9,31.3,265.4],definition:'Load-connection arrow on the 13.8 kV tertiary of 8STBAR_TR1 (50 MVA; 138/69/13.8 kV).'},
+ {code:'08STBAR_SS2',station:'Sta. Barbara',voltage:'13.8 kV',box:[81.7,263.5,97.7,266.0],definition:'Load-connection arrow on the 13.8 kV tertiary of 8STBAR_TR2 (100 MVA; 138/69/13.8 kV).'},
+ {code:'08STBAR_SS3',station:'Sta. Barbara',voltage:'13.8 kV',box:[154.8,263.4,170.8,265.9],definition:'Load-connection arrow on the 13.8 kV tertiary of 8STBAR_TR3 (75 MVA; 138/69/13.8 kV).'},
+ {code:'08STBAR_T1L1',station:'Sta. Barbara',voltage:'69 kV',box:[129.4,371.0,145.2,373.6],definition:'Load-connection arrow on the lower 69 kV branch also showing 08STBPB1_U01–U04. This branch connects to the Sta. Barbara 69 kV bus.'},
+ {code:'08STBAR_T2L2',station:'Sta. Barbara',voltage:'69 kV',box:[47.0,353.2,63.8,355.7],definition:'Load-connection arrow on the 69 kV branch also showing 08SUWECO_G01. This branch connects to the Sta. Barbara 69 kV bus.'},
+ {code:'08ILO_SS1',station:'Iloilo 1',voltage:'138 kV',box:[170.4,269.4,182.0,271.9],definition:'Load-connection arrow directly off the Iloilo 1 138 kV bus, on the high-voltage side of its transformers. Iloilo 1 is the station name, not ILECO I.'}
+];
+let networkNode='08STBAR_SS1',networkZoom=1;
+function networkMapMarkup(){
+ return `<section class="panel network-panel"><div class="panel-head"><div><h2>Sta. Barbara–Iloilo 1 connections</h2><div class="panel-sub">Original IEMOP single-line drawing · Panay excerpt · 6 extracted nodes highlighted</div></div><div class="network-zoom" role="group" aria-label="Network diagram zoom"><button data-network-zoom="1">Fit</button><button data-network-zoom="1.5">150%</button><button data-network-zoom="2">200%</button></div></div><div class="network-legend"><span><i class="network-highlight-key"></i>Extracted market node</span><span><i style="background:#ff8000"></i>138 kV</span><span><i style="background:#00dd37"></i>69 kV</span><span><i style="background:#00efef"></i>13.8 kV</span><span>TR = transformer · G = generation connection</span></div><div class="network-scroll" tabindex="0" role="region" aria-label="Zoomable IEMOP network drawing"><svg id="networkDiagram" viewBox="10 175 325 220" role="group" aria-label="IEMOP electrical connections with six highlighted extracted nodes"></svg></div><div id="networkNodeDefinition" class="network-selection" aria-live="polite"></div><p class="network-note">Hover, focus or click an amber highlight or a node below for its definition. Use zoom and scroll to read the original labels. This is an electrical schematic, not a geographic map or live power-flow display. Connections continue outside the excerpt.</p></section><section class="panel network-definitions"><h2>Extracted nodes · reading the drawing</h2><div class="network-node-grid">${NETWORK_NODES.map((n,i)=>'<button data-network-node="'+n.code+'"><b>'+(i+1)+'. '+n.code+'</b><span>'+n.station+' · '+n.voltage+'</span><span>'+n.definition+'</span></button>').join('')}</div><p>Busbars are the thick horizontal electrical connections. The six codes are the exact RESOURCE_NAME identifiers in the extracted price files; they label modeled load connections, not six separate substations. SS1/SS2/SS3 and T1L1/T2L2 are preserved as source identifiers; their connection voltages above are read from this drawing. The diagram alone does not establish ILECO I settlement ownership, supplier contracts or present-day equipment status.</p></section><section class="panel network-reference"><h2>Reference</h2><p><strong>IEMOP · Market Network Model · Visayas Grid · effective 4 November 2026.</strong><br>Document: MNM_SLD_VIS_20261104.pdf, page 1, Panay / Sta. Barbara–Iloilo 1 area. The diagram uses vector artwork from the supplied original PDF; amber highlights and node descriptions are dashboard annotations.</p><p><a href="${IEMOP_NETWORK_PDF}" target="_blank" rel="noopener">Open original IEMOP PDF · 4 Nov 2026</a> · <a href="${IEMOP_NETWORK_PAGE}" target="_blank" rel="noopener">IEMOP Visayas MNM archive</a></p></section>`;
+}
+function renderNetworkMap(){
+ const diagram=$('networkDiagram');if(!diagram)return;
+ if(!diagram.childElementCount){
+   diagram.innerHTML='<image href="iemop-panay-network.svg?v=20261104" x="10" y="175" width="325" height="220"/>'+NETWORK_NODES.map((n,i)=>{const [x,y,x1,y1]=n.box;return '<g class="network-node" role="button" tabindex="0" data-network-node="'+n.code+'" aria-label="'+n.code+' · '+n.voltage+' · extracted node"><title>'+n.code+' · '+n.definition+'</title><rect x="'+(x-.7)+'" y="'+(y-1)+'" width="'+(x1-x+1.4)+'" height="'+(y1-y+2)+'" rx=".6"/><circle cx="'+(x-2.6)+'" cy="'+(y+1)+'" r="2"/><text x="'+(x-2.6)+'" y="'+(y+2)+'" text-anchor="middle">'+(i+1)+'</text></g>';}).join('');
+   document.querySelectorAll('[data-network-node]').forEach(el=>{
+     const choose=()=>selectNetworkNode(el.dataset.networkNode);
+     el.onmouseenter=el.onfocus=el.onclick=choose;
+     el.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();choose();}};
+   });
+   document.querySelectorAll('[data-network-zoom]').forEach(el=>el.onclick=()=>{networkZoom=Number(el.dataset.networkZoom);renderNetworkMap();});
+ }
+ diagram.style.width=(networkZoom*100)+'%';
+ diagram.parentElement.style.maxHeight=networkZoom===1?'none':'72vh';
+ document.querySelectorAll('[data-network-zoom]').forEach(el=>el.setAttribute('aria-pressed',String(Number(el.dataset.networkZoom)===networkZoom)));
+ selectNetworkNode(networkNode);
+}
+function selectNetworkNode(code){
+ const n=NETWORK_NODES.find(n=>n.code===code);if(!n)return;networkNode=code;
+ $('networkNodeDefinition').innerHTML='<strong>'+n.code+' · '+n.voltage+'</strong><span>'+n.definition+'</span>';
+ document.querySelectorAll('[data-network-node]').forEach(el=>{const active=el.dataset.networkNode===code;el.classList.toggle('selected',active);el.setAttribute('aria-pressed',String(active));});
 }

@@ -281,3 +281,29 @@ html[data-theme] .app[data-active-view] .card:has(>.metric-change) {display:grid
 html[data-theme] .app[data-active-view] .card:has(>.metric-change)>:not(.value):not(.metric-change) {grid-column:1/-1;}
 html[data-theme] .app[data-active-view] .card:has(>.metric-change)>.value {grid-column:1;grid-row:2;}
 html[data-theme] .app[data-active-view] .card>.metric-change {position:static;transform:none;grid-column:2;grid-row:2;align-self:center;max-width:80px;font-size:12px;}
+/* Bus Map is a source-based electrical schematic, independent of price filters. */
+html[data-theme] .app[data-active-view=map] .connection,
+html[data-theme] .app[data-active-view=map] .footer {display:none;}
+.network-panel,.network-definitions,.network-reference {padding:18px;margin-bottom:16px;}
+.network-panel .panel-head {display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;}
+.network-zoom {display:flex;gap:4px;}
+html[data-theme] .network-zoom button[aria-pressed=true] {background:var(--accent-bg);border-color:var(--orange);font-weight:700;}
+.network-legend {display:flex;gap:14px;flex-wrap:wrap;padding:12px 0;font-size:12px;color:var(--ink);}
+.network-legend span {display:inline-flex;gap:6px;align-items:center;}
+.network-legend i {display:inline-block;width:20px;height:4px;}
+.network-legend .network-highlight-key {height:12px;background:#fff1c2;border:2px solid #a86700;}
+.network-scroll {overflow:auto;max-height:72vh;border:1px solid var(--line);background:#fff;}
+#networkDiagram {display:block;height:auto;max-width:none;background:#fff;}
+.network-node {cursor:pointer;}
+.network-node rect {fill:#ffe391;fill-opacity:.34;stroke:#ac6800;stroke-width:.55;}
+.network-node circle {fill:#fff3c6;stroke:#925500;stroke-width:.35;}
+.network-node text {fill:#192d42;font:bold 3px Arial,sans-serif;pointer-events:none;}
+.network-node:is(.selected,:hover,:focus) rect {fill-opacity:.7;stroke:#123e61;stroke-width:.8;}
+.network-selection {display:grid;gap:4px;min-height:56px;padding:12px;border-left:3px solid #b96f18;margin-top:12px;background:var(--surface-alt);color:var(--ink);font-size:14px;line-height:1.5;}
+.network-note,.network-definitions p,.network-reference p {font-size:13px;line-height:1.6;color:var(--ink);}
+.network-node-grid {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:12px 0;}
+html[data-theme] .network-node-grid button {display:grid;align-content:start;gap:7px;text-align:left;white-space:normal;padding:12px;font-size:13px;line-height:1.5;}
+.network-node-grid button b {font-size:14px;}
+html[data-theme] .network-node-grid button.selected {border-color:#a86700;background:#fff4d8;}
+@media(max-width:900px){.network-node-grid{grid-template-columns:repeat(2,minmax(0,1fr));}}
+@media(max-width:600px){.network-node-grid{grid-template-columns:1fr;}.network-panel,.network-definitions,.network-reference{padding:12px;}.network-scroll{max-height:55vh;}}

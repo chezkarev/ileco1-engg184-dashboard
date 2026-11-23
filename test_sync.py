@@ -40,6 +40,7 @@ class SyncTests(unittest.TestCase):
             self.assertEqual(data['sourceMode'],'google-sheets')
             self.assertEqual(json.loads((output/'sync-status.json').read_text())['sourceVersion'],payload['sourceVersion'])
             self.assertTrue((output/'index.html').exists())
+            self.assertEqual((output/'iemop-panay-network.svg').read_bytes(),(sync.ROOT/'iemop-panay-network.svg').read_bytes())
             page=(output/'index.html').read_text(encoding='utf-8')
             for asset in ('theme.css','theme.js','interface.js','app.js'):
                 digest=sync.hashlib.sha256((output/asset).read_bytes()).hexdigest()[:12]
