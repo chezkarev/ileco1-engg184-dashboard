@@ -16,7 +16,7 @@ function initializeInterface() {
   palette.splice(0, 6, '#b9650d', '#444765', '#788ba4', '#5e8584', '#a06f62', '#9693aa');
   document.querySelector('.rail-brand').innerHTML = '<img class="ileco-logo" src="ileco-i-logo.png" alt="ILECO I logo"><span>ILECO I</span><small>Market Intelligence</small><small class="academic-note">ENGG 184 academic prototype<br>Not for operational deployment</small>';
   for (const group of ['primary', 'secondary']) {
-    const keys = group === 'primary' ? ['dashboard', 'market', 'map', 'demand', 'calculator'] : ['sources', 'project'];
+    const keys = group === 'primary' ? ['dashboard', 'market', 'map', 'demand'] : ['sources', 'project'];
     document.querySelector('.rail-nav.' + group).innerHTML = keys.map(key => {
       const item = PLATFORM_VIEWS[key];
       return '<button data-view="' + key + '" aria-label="' + item.description + '" aria-controls="' + key + 'View"><svg viewBox="0 0 24 24" aria-hidden="true">' + icons[key] + '</svg><span>' + item.label + '</span></button>';
