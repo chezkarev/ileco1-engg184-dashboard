@@ -245,3 +245,10 @@ html[data-theme] .app[data-active-view] .overview-stat:first-child .metric-chang
 html[data-theme] .app[data-active-view] .latest-bus-row .metric-change.down {color:var(--increase)!important;}
 html[data-theme] .app[data-active-view] .overview-stat:first-child .metric-change.up,
 html[data-theme] .app[data-active-view] .latest-bus-row .metric-change.up {color:var(--decrease)!important;}
+.dashboard-price-controls {display:flex;gap:6px;align-items:center;flex-wrap:wrap;}
+.dashboard-price-controls select {font-size:12px;min-height:30px;max-width:170px;padding:4px 7px;}
+.dashboard-forecast-note {padding:5px 10px 7px;border-top:1px solid var(--line);font-size:11px;line-height:1.4;position:relative;}
+.dashboard-forecast-note>strong,.dashboard-forecast-note>span {display:block;}
+.dashboard-forecast-note>strong {font-size:12px;color:var(--ink);}
+.dashboard-forecast-note details summary {cursor:pointer;text-decoration:underline;}
+.dashboard-forecast-note details[open] p {position:absolute;z-index:15;right:0;bottom:20px;width:min(440px,90vw);max-height:200px;overflow:auto;padding:12px;background:var(--surface);border:1px solid var(--line);box-shadow:0 8px 24px #0005;font-size:12px;}
