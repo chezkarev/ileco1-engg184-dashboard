@@ -63,9 +63,26 @@ assert.equal(forecast.points.length,24);
 assert.equal(forecast.points[0].x,origin+hour);
 assert.equal(forecast.points.at(-1).x,origin+24*hour);
 assert.equal(forecast.days,7);
-assert.equal(forecast.model,'Daily pattern + recent daily trend');
+assert.equal(forecast.model,'Linear Full');
 assert.ok(forecast.mae<1e-10);
 assert.equal(forecast.peakHours[0],origin+19*hour);
+for(const model of ['full','recent10','recent5','log']) for(const horizon of [12,24]){
+ const result=plain(evaluate("buildPriceForecast(forecastRows,['LMP'],forecastOrigin,'"+model+"',"+horizon+")"));
+ assert.equal(result.points.length,horizon);
+ assert.equal(result.points.at(-1).x,origin+horizon*hour);
+ assert.ok(Number.isFinite(result.mae));
+ if(model!=='log') assert.ok(result.mae<1e-9);
+}
+const logRows=context.forecastRows.map(r=>[r[0],r[1]]);
+for(let i=0;i<12;i++)logRows[i][1]=-100;
+context.logRows=logRows;
+assert.equal(evaluate("buildPriceForecast(logRows,['LMP'],forecastOrigin,'log').points.length"),0);
+assert.equal(evaluate("buildPriceForecast(logRows,['LMP'],forecastOrigin,'full').points.length"),24);
+context.exponentialRows=context.forecastRows.map(([t])=>[t,1000*Math.exp((t-origin)/86400000*0.02+(new Date(t+28800000).getUTCHours()===18?0.5:0))]);
+const exponential=plain(evaluate("buildPriceForecast(exponentialRows,['LMP'],forecastOrigin,'log',12)"));
+assert.equal(exponential.points.length,12);
+assert.ok(exponential.mae<1e-9);
+assert.throws(()=>evaluate("buildPriceForecast(forecastRows,['LMP'],forecastOrigin,'full',48)"));
 context.forecastRows.push([origin+300000,999999999]);
 assert.deepEqual(plain(evaluate("buildPriceForecast(forecastRows,['LMP'],forecastOrigin)")),forecast);
 context.forecastRows=context.forecastRows.filter(r=>r[0]!==origin-300000);
