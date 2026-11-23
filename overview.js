@@ -157,7 +157,7 @@ function renderOverview() {
   $('nowRequirement').textContent = num(snapshot.requirement, 0);
   $('nowSpread').textContent = price(snapshot.spread);
   $('overviewAsOf').textContent = 'Interval ended ' + stamp(snapshot.end) + ' PHT';
-  $('rangeCaption').textContent = 'Market snapshot · Panay buses & Visayas grid';
+  $('rangeCaption').textContent = 'WESM price monitoring and forecasting support · Selected Panay buses & Visayas grid';
   const clock = value => new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Manila', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(value);
   const ticks = Array.from({ length: 5 }, (_, i) => snapshot.start + i * 21600000);
   const options = { ticks, xmin: snapshot.start, xmax: snapshot.end, formatX: clock, formatTooltip: value => stamp(value) + ' PHT', markers: false, maxGap: 450000, compact: true };

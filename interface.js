@@ -1,6 +1,6 @@
 /* Navigation, controls and chart inspection. Dataset/model calculations live in app.js. */
 const PLATFORM_VIEWS = {
-  dashboard: { label: 'Dashboard', title: 'Panay Energy Dashboard', description: 'Latest market dashboard' },
+  dashboard: { label: 'Dashboard', title: 'ILECO I Energy Market Dashboard', description: 'Latest market dashboard' },
   market: { label: 'Market', title: 'Market analysis', description: 'Panay market overview' },
   calculator: { label: 'Calculator', title: 'Load-shift calculator', description: 'Load-shift calculator' },
   map: { label: 'Bus Map', title: 'Panay bus connections', description: 'Panay bus map' },
@@ -14,7 +14,7 @@ function initializeInterface() {
   icons.dashboard = '<rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/>';
   icons.calculator = '<rect x="5" y="2" width="14" height="20" rx="1"/><path d="M8 6h8M8 11h2M14 11h2M8 15h2M14 15h2M8 19h2M14 19h2"/>';
   palette.splice(0, 6, '#b9650d', '#444765', '#788ba4', '#5e8584', '#a06f62', '#9693aa');
-  document.querySelector('.rail-brand').innerHTML = panayLogo + '<span>PANAY<br>ENERGY</span><small>Market Observatory</small>';
+  document.querySelector('.rail-brand').innerHTML = panayLogo + '<span>ILECO I</span><small>Market Intelligence</small>';
   for (const group of ['primary', 'secondary']) {
     const keys = group === 'primary' ? ['dashboard', 'market', 'map', 'demand', 'calculator'] : ['sources', 'project'];
     document.querySelector('.rail-nav.' + group).innerHTML = keys.map(key => {
