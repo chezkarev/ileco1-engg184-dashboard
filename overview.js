@@ -1,6 +1,5 @@
 /* Dashboard controls do not change the Market tab's filters. */
 let dashboardNode = '08STBAR_SS1';
-let dashboardPriceMode = 'forecast';
 function buildLatestSnapshot(data, selectedNode = '08STBAR_SS1') {
   const names = Object.keys(data.nodes);
   const nodeLookups = names.map(name => new Map(data.nodes[name].map(row => [row[0], row])));
@@ -23,51 +22,90 @@ function buildLatestSnapshot(data, selectedNode = '08STBAR_SS1') {
   };
 }
 
-// Hour-ending means require twelve observed 5-minute prices; gaps stay missing.
-function buildPriceForecast(rows, fields, cutoff) {
-  const HOUR=3600000, DAY=24*HOUR, priceIndex=fields.indexOf('LMP')+1;
-  const buckets=new Map();
-  for(const row of rows){
-    if(row[0]>cutoff || !Number.isFinite(row[priceIndex])) continue;
-    const hour=Math.ceil(row[0]/HOUR)*HOUR;
-    if(!buckets.has(hour)) buckets.set(hour,new Map());
-    buckets.get(hour).set(row[0],row[priceIndex]/1000);
+const PRICE_MODELS = {'log':'Log-Linear','full':'Linear Full','recent10':'Linear 10-Day Recent','recent5':'Linear 5-Day Recent'};
+let marketPriceModel='recent10', marketPriceHorizon=24, marketForecastResult=null;
+// Complete hour-ending averages only. Regress time within hour-of-day groups:
+// y = hour-specific intercept + common linear trend. Log model uses log(y).
+function buildPriceForecast(rows, fields, cutoff, model='full', horizon=24) {
+  if(!PRICE_MODELS[model] || ![12,24].includes(horizon)) throw Error('Unsupported forecast control');
+  const HOUR=3600000, DAY=24*HOUR, index=fields.indexOf('LMP')+1, buckets=new Map();
+  const origin=Math.floor(cutoff/HOUR)*HOUR;
+  for(const r of rows){
+    if(r[0]>origin || !Number.isFinite(r[index])) continue;
+    const t=Math.ceil(r[0]/HOUR)*HOUR;
+    if(!buckets.has(t)) buckets.set(t,new Map());
+    buckets.get(t).set(r[0],r[index]/1000);
   }
   const hourly=new Map();
-  for(const [hour,values] of buckets){
-    if(Array.from({length:12},(_,i)=>hour-i*300000).every(t=>values.has(t)))
-      hourly.set(hour,[...values.values()].reduce((a,b)=>a+b,0)/12);
-  }
-  const origin=Math.floor(cutoff/HOUR)*HOUR;
-  const predict=(at,trend)=>{
-    const recent=Array.from({length:24},(_,i)=>hourly.get(at-i*HOUR));
-    const previous=Array.from({length:24},(_,i)=>hourly.get(at-DAY-i*HOUR));
-    if(!recent.every(Number.isFinite) || (trend && !previous.every(Number.isFinite))) return null;
-    const change=trend?(recent.reduce((a,b)=>a+b,0)-previous.reduce((a,b)=>a+b,0))/24:0;
-    return Array.from({length:24},(_,i)=>({x:at+(i+1)*HOUR,y:recent[23-i]+change}));
+  for(const [t,values] of buckets) if(Array.from({length:12},(_,i)=>t-i*300000).every(x=>values.has(x))) hourly.set(t,[...values.values()].reduce((a,b)=>a+b,0)/12);
+  const avg=a=>a.length?a.reduce((x,y)=>x+y,0)/a.length:null;
+  const hour=t=>((t/HOUR+8)%24+24)%24;
+  const fit=at=>{
+    const days=model==='recent10'?10:model==='recent5'?5:Infinity;
+    const train=[...hourly].filter(([t])=>t<=at && t>at-days*DAY).sort((a,b)=>a[0]-b[0]);
+    if(train.length<72 || !hourly.has(at)) return {reason:'At least 72 complete hourly observations and a complete origin hour are required.'};
+    if(model==='log' && train.some(([,y])=>y<=0)) return {reason:'Log-Linear requires strictly positive training prices. Zero/negative prices are retained; choose a linear model.'};
+    const groups=Array.from({length:24},()=>[]);
+    train.forEach(([t,y])=>groups[hour(t)].push({x:(t-at)/DAY,y:model==='log'?Math.log(y):y}));
+    if(groups.some(g=>g.length<2)) return {reason:'Each hour of day needs at least two complete observations.'};
+    const means=groups.map(g=>({x:avg(g.map(p=>p.x)),y:avg(g.map(p=>p.y))}));
+    let numerator=0,denominator=0;
+    groups.forEach((g,h)=>g.forEach(p=>{numerator+=(p.x-means[h].x)*(p.y-means[h].y);denominator+=(p.x-means[h].x)**2;}));
+    if(!denominator) return {reason:'Insufficient time variation for a trend fit.'};
+    const slope=numerator/denominator, offsets=means.map(m=>m.y-slope*m.x);
+    const smear=model==='log'?avg(train.map(([t,y])=>Math.exp(Math.log(y)-offsets[hour(t)]-slope*(t-at)/DAY))):1;
+    const points=Array.from({length:horizon},(_,i)=>{const x=at+(i+1)*HOUR,z=offsets[hour(x)]+slope*(x-at)/DAY;return {x,y:model==='log'?Math.exp(z)*smear:z};});
+    if(points.some(p=>!Number.isFinite(p.y))) return {reason:'The fitted model produced non-finite predictions.'};
+    return {points,count:train.length,start:train[0][0],slope};
   };
-  // Non-overlapping rolling 24-hour holdouts; no future rows enter a prediction.
-  const errors=[[],[]], persistenceErrors=[];
-  let days=0;
-  for(let day=1;day<=7;day++){
-    const at=origin-day*DAY, forecasts=[predict(at,false),predict(at,true)];
-    const actual=Array.from({length:24},(_,i)=>hourly.get(at+(i+1)*HOUR));
-    if(!forecasts.every(Boolean)||!actual.every(Number.isFinite)) continue;
+  const fitted=fit(origin);
+  if(!fitted.points) return {origin,points:[],reason:fitted.reason};
+  const errors=[],baseline=[],peakErrors=[];let days=0;
+  for(let d=1;d<=7;d++){
+    const at=origin-d*DAY,predicted=fit(at);
+    const actual=Array.from({length:horizon},(_,i)=>hourly.get(at+(i+1)*HOUR));
+    const naive=Array.from({length:horizon},(_,i)=>hourly.get(at+(i+1)*HOUR-DAY));
+    if(!predicted.points || !actual.every(Number.isFinite) || !naive.every(Number.isFinite)) continue;
     days++;
-    forecasts.forEach((points,model)=>points.forEach((p,i)=>errors[model].push(Math.abs(p.y-actual[i]))));
-    actual.forEach(value=>persistenceErrors.push(Math.abs(hourly.get(at)-value)));
+    predicted.points.forEach((p,i)=>{errors.push(Math.abs(p.y-actual[i]));baseline.push(Math.abs(naive[i]-actual[i]));});
+    const peakIndex=predicted.points.findIndex(p=>p.y===Math.max(...predicted.points.map(q=>q.y)));
+    peakErrors.push(Math.abs(peakIndex-actual.indexOf(Math.max(...actual))));
   }
-  const average=values=>values.length?values.reduce((a,b)=>a+b,0)/values.length:null;
-  const scores=errors.map(average);
-  const selected=days>=3 && scores[1]<scores[0]?1:0;
-  const points=predict(origin,selected===1);
-  if(!points) return {origin,points:[],reason:'A complete preceding 24-hour price profile is required.'};
-  const peak=Math.max(...points.map(p=>p.y));
-  return {origin,points,peak,peakHours:points.filter(p=>Math.abs(p.y-peak)<1e-9).map(p=>p.x),
-    model:selected?'Daily pattern + recent daily trend':'Previous-day hourly pattern',
-    mae:days>=3?scores[selected]:null, baselineMae:days>=3?scores[0]:null,
-    persistenceMae:days>=3?average(persistenceErrors):null,days,
+  const peak=Math.max(...fitted.points.map(p=>p.y));
+  return {origin,...fitted,peak,peakHours:fitted.points.filter(p=>Math.abs(p.y-peak)<1e-9).map(p=>p.x),model:PRICE_MODELS[model],horizon,days,
+    mae:days>=3?avg(errors):null,baselineMae:days>=3?avg(baseline):null,peakError:days>=3?avg(peakErrors):null,
     observed:Array.from({length:24},(_,i)=>({x:origin-(23-i)*HOUR,y:hourly.get(origin-(23-i)*HOUR)??null}))};
+}
+
+function marketForecastMarkup(){
+ return `<section class="panel market-forecast" aria-label="Market price forecasting"><div class="panel-head"><div><h2>Price forecast · experimental</h2><div id="marketForecastContext" class="panel-sub"></div></div><div class="market-forecast-controls"><label>Model<select id="marketPriceModel">${Object.entries(PRICE_MODELS).map(([key,label])=>'<option value="'+key+'">'+label+'</option>').join('')}</select></label><label>Horizon<select id="marketPriceHorizon"><option value="12">12 hours</option><option value="24" selected>1 day · 24 hours</option></select></label><button id="exportPriceForecast">Export forecast CSV</button></div></div><div id="marketForecastStatus" aria-live="polite"></div><div class="market-forecast-chart"><canvas id="marketForecastChart" role="img" aria-label="Selected bus hourly price forecast"></canvas></div><details class="forecast-method"><summary>Forecast method & validation</summary><div id="marketForecastMethod"></div></details></section>`;
+}
+function initializeMarketForecast(){
+ $('marketPriceModel').value=marketPriceModel;
+ $('marketPriceHorizon').value=String(marketPriceHorizon);
+ $('marketPriceModel').onchange=()=>{marketPriceModel=$('marketPriceModel').value;renderMarketForecast();};
+ $('marketPriceHorizon').onchange=()=>{marketPriceHorizon=Number($('marketPriceHorizon').value);renderMarketForecast();};
+ $('exportPriceForecast').onclick=()=>{
+   if(!marketForecastResult?.points.length)return;
+   const f=marketForecastResult,body='BUS,MODEL,ORIGIN_PHT,INTERVAL_END_PHT,HORIZON_HOURS,FORECAST_PHP_PER_KWH\n'+f.points.map(p=>[view.node,f.model,stamp(f.origin)+' PHT',stamp(p.x)+' PHT',f.horizon,p.y].map(v=>'"'+String(v).replaceAll('"','""')+'"').join(',')).join('\n');
+   const link=document.createElement('a');link.href=URL.createObjectURL(new Blob([body],{type:'text/csv;charset=utf-8'}));link.download='Panay_price_forecast_'+view.node+'_'+f.horizon+'h.csv';link.click();setTimeout(()=>URL.revokeObjectURL(link.href),1000);
+ };
+}
+function renderMarketForecast(){
+ const last=view.nodes?.at(-1),context=$('marketForecastContext'),status=$('marketForecastStatus'),method=$('marketForecastMethod');
+ $('marketForecastChart').parentElement.hidden=false;
+ if(!last){marketForecastResult=null;context.textContent='No observations in the selected window.';status.textContent='Select a date range with observed prices.';method.textContent='';$('marketForecastChart').parentElement.hidden=true;$('exportPriceForecast').disabled=true;return;}
+ const f=buildPriceForecast(D.nodes[view.node],D.nodeFields,last[0],marketPriceModel,marketPriceHorizon);marketForecastResult=f;
+ context.textContent=view.node+' · hourly average LMP · PHP/kWh · origin '+stamp(f.origin)+' PHT';
+ $('exportPriceForecast').disabled=!f.points.length;
+ const notes='Fits observed hourly prices with a linear time trend and 24 hour-of-day intercepts. Log-Linear fits log(price), then applies a residual smearing correction. Full uses all available prior history; recent models use the preceding 10 or 5 days, adapted from the annual demand study’s year-based windows. Training may precede the selected display start date. All fitting uses data available at each forecast origin. No weather inputs. Prices are not retail tariffs.';
+ if(!f.points.length){status.textContent='Forecast unavailable: '+f.reason;method.textContent=notes;$('marketForecastChart').parentElement.hidden=true;return;}
+ const end=f.points.at(-1).x,peak=f.peakHours[0],historical=Date.now()>end;
+ status.innerHTML='<div><span>Estimated peak hourly mean</span><strong>₱'+num(f.peak)+'/kWh</strong><span>'+stamp(peak-3600000)+'–'+new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Manila',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).format(peak)+' PHT'+(f.peakHours.length>1?' · tied hours':'')+'</span></div><div><span>'+ (historical?'Historical forecast':'Forecast window')+'</span><strong>'+f.horizon+' hours ahead</strong><span>Ends '+stamp(end)+' PHT'+(historical?' · newer source data needed for a current outlook.':'')+'</span></div><div><span>Rolling backtest MAE</span><strong>'+(f.mae==null?'Unavailable':'₱'+num(f.mae)+'/kWh')+'</strong><span>'+f.days+' complete holdouts · '+f.horizon+' hours each</span></div>';
+ method.textContent=notes+' Training: '+f.count+' complete hours from '+stamp(f.start)+' PHT. '+(f.mae==null?'At least 3 valid holdouts are needed to report accuracy.':'MAE: ₱'+num(f.mae)+'/kWh; previous-day baseline MAE: ₱'+num(f.baselineMae)+'/kWh. Mean peak-hour timing error: '+num(f.peakError,1)+' hours (earliest tied peak). Seven prior origins are evaluated where complete data exist. Model choice is manual; browsing these scores is not an independent final test.')+' Estimated peaks are not guaranteed price spikes.';
+ if(f.mae!=null){const comparison=document.createElement('span');comparison.textContent='Previous-day baseline MAE: ₱'+num(f.baselineMae)+'/kWh'+(f.mae>f.baselineMae?' · lower error than this model.':' · selected model has equal or lower error.');status.lastElementChild.append(comparison);}
+ const start=f.origin-23*3600000;
+ drawAnalyticalSeries('marketForecastChart',[{name:'Observed hourly mean',color:'#16476b',data:f.observed},{name:f.model+' · forecast',color:'#b9650d',dashed:true,data:[{x:f.origin,y:f.observed.at(-1).y},...f.points]}],{xmin:start,xmax:end,ticks:Array.from({length:5},(_,i)=>start+i*(end-start)/4),formatX:t=>new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Manila',day:'2-digit',month:'short',hour:'2-digit',hourCycle:'h23'}).format(t),formatTooltip:t=>stamp(t)+' PHT',unit:'PHP/kWh',decimals:2,maxGap:5400000,compact:true});
 }
 
 function overviewMarkup() {
@@ -79,7 +117,7 @@ function overviewMarkup() {
   </section>
   <div class="dash-grid">
     <section class="dash-panel dash-map"><div class="dash-panel-title"><h2>Panay bus locations</h2><button data-view="map" class="dash-text-button">Full map</button></div><div class="dash-map-body"><svg id="overviewMap" viewBox="0 0 500 390" role="group" aria-label="Panay map showing the approximate Sta. Barbara and Iloilo 1 station areas"></svg><div id="overviewMapReadout" aria-live="polite"></div></div></section>
-    <section class="dash-panel dash-price"><div class="dash-panel-title"><h2 id="dashboardPriceTitle">Price outlook · 24 hours ahead</h2><div class="dashboard-price-controls"><select id="dashboardNode" aria-label="Dashboard price bus"></select><select id="dashboardPriceMode" aria-label="Dashboard price chart"><option value="forecast">24-hour forecast</option><option value="observed">Observed · past 24h</option></select></div></div><div class="overview-chart"><canvas id="overviewPrice" role="img" aria-label="Selected bus price outlook"></canvas></div><div id="dashboardForecastNote" class="dashboard-forecast-note" aria-live="polite"></div></section>
+    <section class="dash-panel dash-price"><div class="dash-panel-title"><h2 id="dashboardPriceTitle">Spot price · past 24 hours</h2><div class="dashboard-price-controls"><select id="dashboardNode" aria-label="Dashboard price bus"></select></div></div><div class="overview-chart"><canvas id="overviewPrice" role="img" aria-label="Selected bus price outlook"></canvas></div></section>
     <section class="dash-panel dash-supplier"><div class="dash-panel-title"><h2>Power supplier · regional context</h2></div><div class="dash-supplier-body"><strong>Panay Energy Development Corp.</strong><div class="dash-capacity"><b>314 <small>MW</small></b><span>164 + 150 MW installed</span></div><p>Coal-fired generation · Iloilo City</p><p class="supplier-note">Regional generator; bus-level suppliers unverified.</p><a href="https://www.gbp.com.ph/power-generation/our-solutions-panay-mindoro/" target="_blank" rel="noopener">PEDC / official plant profile</a><div id="overviewCompleteness"></div></div></section>
     <section class="dash-panel dash-regional"><div class="dash-panel-title"><h2>Generation & requirement</h2><span>MW</span></div><div class="overview-chart secondary"><canvas id="overviewRegional" role="img" aria-label="Visayas generation and market requirement for the latest 24 hours"></canvas></div><div class="dash-legend"><span><i></i>Generation</span><span><i></i>Requirement</span></div></section>
     <section class="dash-panel dash-buses"><div class="dash-panel-title"><h2>Latest bus prices</h2><span>PHP/kWh</span></div><div id="latestBusPrices" class="latest-bus-prices"></div></section>
@@ -97,8 +135,6 @@ function renderOverview() {
   selector.innerHTML=Object.keys(D.nodes).map(name=>'<option value="'+name+'">'+name+'</option>').join('');
   selector.value=snapshot.reference;
   selector.onchange=()=>{dashboardNode=selector.value;renderOverview();};
-  $('dashboardPriceMode').value=dashboardPriceMode;
-  $('dashboardPriceMode').onchange=()=>{dashboardPriceMode=$('dashboardPriceMode').value;renderOverview();};
   $('nowGeneration').textContent = num(snapshot.generation, 0);
   $('nowRequirement').textContent = num(snapshot.requirement, 0);
   $('nowSpread').textContent = price(snapshot.spread);
@@ -107,7 +143,8 @@ function renderOverview() {
   const clock = value => new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Manila', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(value);
   const ticks = Array.from({ length: 5 }, (_, i) => snapshot.start + i * 21600000);
   const options = { ticks, xmin: snapshot.start, xmax: snapshot.end, formatX: clock, formatTooltip: value => stamp(value) + ' PHT', markers: false, maxGap: 450000, compact: true };
-  renderDashboardPrice(snapshot,options,clock);
+  $('overviewPrice').setAttribute('aria-label',snapshot.reference+' · observed bus prices for the past 24 hours');
+  drawAnalyticalSeries('overviewPrice',[{name:snapshot.reference,color:'#b9650d',data:snapshot.prices}],{...options,unit:'PHP/kWh',decimals:1});
   drawAnalyticalSeries('overviewRegional', [
     { name: 'Generation', color: '#16476b', data: snapshot.regional.map(row => ({ x: row[0], y: row[D.regionalFields.indexOf('GENERATION') + 1] })) },
     { name: 'Market requirement', color: '#b9650d', dashed: true, data: snapshot.regional.map(row => ({ x: row[0], y: row[D.regionalFields.indexOf('MKT_REQT') + 1] })) }
@@ -117,34 +154,6 @@ function renderOverview() {
   $('overviewCompleteness').textContent = snapshot.prices.filter(row => Number.isFinite(row.y)).length + '/288 price intervals · ' + snapshot.regional.length + '/288 regional intervals';
   renderOverviewMap(snapshot);
   updateComparisonIndicators(snapshot);
-}
-
-function renderDashboardPrice(snapshot,options,clock){
-  const forecast=buildPriceForecast(D.nodes[snapshot.reference],D.nodeFields,snapshot.end);
-  const note=$('dashboardForecastNote');
-  $('dashboardPriceTitle').textContent=dashboardPriceMode==='forecast'?'Price outlook · 24 hours ahead':'Spot price · past 24 hours';
-  $('overviewPrice').setAttribute('aria-label',snapshot.reference+' · '+(dashboardPriceMode==='forecast'?'24-hour-ahead hourly price forecast':'past 24-hour observed prices'));
-  if(dashboardPriceMode==='observed'){
-    drawAnalyticalSeries('overviewPrice',[{name:snapshot.reference,color:'#b9650d',data:snapshot.prices}],{...options,unit:'PHP/kWh',decimals:1});
-    note.textContent=snapshot.reference+' · observed 5-minute LMP · PHP/kWh';
-    return;
-  }
-  if(!forecast.points.length){
-    drawAnalyticalSeries('overviewPrice',[],{...options,unit:'PHP/kWh'});
-    note.textContent='Forecast unavailable: '+forecast.reason;
-    return;
-  }
-  const start=forecast.origin-23*3600000,end=forecast.origin+86400000;
-  const label=t=>new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Manila',day:'2-digit',month:'short',hour:'2-digit',hourCycle:'h23'}).format(t);
-  drawAnalyticalSeries('overviewPrice',[
-    {name:'Observed hourly mean',color:'#16476b',data:forecast.observed},
-    {name:forecast.model+' · forecast',color:'#b9650d',dashed:true,data:[{x:forecast.origin,y:forecast.observed.at(-1).y},...forecast.points]}
-  ],{...options,xmin:start,xmax:end,ticks:Array.from({length:5},(_,i)=>start+i*(end-start)/4),formatX:label,unit:'PHP/kWh',decimals:1,maxGap:5400000});
-  const peakHour=forecast.peakHours[0];
-  const hourRange=clock(peakHour-3600000)+'–'+clock(peakHour);
-  const peakDate=new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Manila',day:'2-digit',month:'short'}).format(peakHour-3600000);
-  const historical=Date.now()>end;
-  note.innerHTML='<strong>Estimated peak: ₱'+num(forecast.peak)+'/kWh · '+peakDate+' '+hourRange+' PHT'+(forecast.peakHours.length>1?' (tied hours)':'')+'</strong><span>'+ (historical?'Historical forecast · update source data for a current outlook. ':'') +'Forecast ends '+stamp(end)+' PHT · dashed = forecast; solid = observed. Hour-ending averages.</span><details><summary>Model & validation</summary><p>'+forecast.model+'. Repeats the preceding day’s hourly pattern; the trend variant adds the change in daily mean. Variant selected by MAE on '+forecast.days+' completed rolling 24-hour holdouts. '+(forecast.mae==null?'Fewer than three valid holdouts; validation unavailable.':'Selected MAE: ₱'+num(forecast.mae)+'/kWh; previous-day baseline: ₱'+num(forecast.baselineMae)+'/kWh; last-price baseline: ₱'+num(forecast.persistenceMae)+'/kWh. These holdouts select the variant and are not an independent test.')+' No weather inputs. Estimated peak hour, not a guaranteed spike prediction. Forecast origin: '+stamp(forecast.origin)+' PHT.</p></details>';
 }
 
 function comparisonMarkup(current, previous, label) {

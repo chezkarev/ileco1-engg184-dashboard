@@ -33,6 +33,8 @@ function initializeInterface() {
   const content = main.querySelector('.content');
   main.insertBefore(market, cards);
   market.append(cards, content);
+  content.insertAdjacentHTML('beforebegin',marketForecastMarkup());
+  initializeMarketForecast();
   for (const [key, markup] of [['dashboard', overviewMarkup()], ['calculator', '<div class="calculator-page-intro"><span class="feature-label">Decision tool</span><p>Turn historical price differences into a flexible-load scenario. Choose a bus and dates above, then compare two load windows.</p></div><div id="calculatorWorkspace"></div>'], ['map', mapMarkup()], ['demand', demandMarkup()], ['sources', sourcesMarkup()], ['project', projectMarkup()]]) {
     const page = document.createElement('div');
     page.id = key + 'View';
@@ -79,7 +81,7 @@ function initializeInterface() {
     originalRender();
     renderCalculator();
     if (view.nodes) {
-      if (activeView === 'market') enhanceMarketCharts();
+      if (activeView === 'market') { enhanceMarketCharts(); renderMarketForecast(); }
       updateFilterState();
       marketComparisonIndicators();
     }
