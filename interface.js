@@ -299,12 +299,13 @@ function drawAnalyticalSeries(id, series, options = {}) {
     c.textAlign = 'left';
     c.fillText('MODEL PROJECTIONS', x(options.boundary) + 9, T + 14);
   }
-  for (let i = 0; i <= 4; i++) {
-    const yy = T + i * ph / 4;
+  const divisions = Math.max(1, Math.min(4, Math.floor(ph / 22)));
+  for (let i = 0; i <= divisions; i++) {
+    const yy = T + i * ph / divisions;
     c.strokeStyle=chartColor('#e8ecf2'); c.lineWidth = 1;
     c.beginPath(); c.moveTo(L, yy); c.lineTo(w - R, yy); c.stroke();
     c.textAlign = 'right'; c.fillStyle=chartColor('#43516a');
-    c.fillText(num(hi - (hi - lo) * i / 4, options.decimals ?? 0), L - 9, yy + 4);
+    c.fillText(num(hi - (hi - lo) * i / divisions, options.decimals ?? 0), L - 9, yy + 4);
   }
   const ticks = options.ticks || Array.from({ length: 5 }, (_, i) => Math.round(xmin + (xmax - xmin) * i / 4));
   const stride = options.compact && w < 360 ? 2 : w < 500 && ticks.length > 6 ? 2 : 1;
